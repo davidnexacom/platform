@@ -1,5 +1,7 @@
 ﻿using FSH.Framework.Core.Exceptions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -59,14 +61,27 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
                 context.HandleResponse();
 
                 var path = context.HttpContext.Request.Path;
+                
+                // Static files and assets don't have endpoints - they're handled by UseStaticFiles()
+                // If there's no endpoint, check if it's likely a static file request
+                var endpoint = context.HttpContext.GetEndpoint();
+                if (endpoint is null)
+                {
+                    // Allow requests without endpoints (static files, assets, etc.)
+                    // These should have been handled by UseStaticFiles() middleware
+                    // If they reach here, they're either missing files or the path doesn't exist
+                    return Task.CompletedTask;
+                }
 
-                if (!context.Response.HasStarted)
+                var allowAnonymous = endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null;
+
+                // Only throw exception if authentication is required
+                if (!allowAnonymous)
                 {
                     var method = context.HttpContext.Request.Method;
-
-                    // You can include more details if needed like headers, etc.
                     throw new UnauthorizedException($"Unauthorized access to {method} {path}");
                 }
+
 
                 return Task.CompletedTask;
             },

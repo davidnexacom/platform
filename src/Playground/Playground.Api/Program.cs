@@ -11,6 +11,22 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Map Aspire connection strings to application configuration keys
+// Aspire injects: ConnectionStrings__fsh and ConnectionStrings__redis
+// Application expects: DatabaseOptions__ConnectionString and CachingOptions__Redis
+var postgresConnectionString = builder.Configuration.GetConnectionString("fsh");
+var redisConnectionString = builder.Configuration.GetConnectionString("redis");
+
+if (!string.IsNullOrEmpty(postgresConnectionString))
+{
+    builder.Configuration["DatabaseOptions:ConnectionString"] = postgresConnectionString;
+}
+
+if (!string.IsNullOrEmpty(redisConnectionString))
+{
+    builder.Configuration["CachingOptions:Redis"] = redisConnectionString;
+}
+
 if (builder.Environment.IsProduction())
 {
     static void Require(IConfiguration config, string key)
