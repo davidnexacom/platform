@@ -18,6 +18,7 @@ public interface IUserService
     Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, FileUploadRequest image, bool deleteCurrentImage);
     Task DeleteAsync(string userId);
     Task<string> ConfirmEmailAsync(string userId, string code, string tenant, CancellationToken cancellationToken);
+    Task<string> AdminConfirmEmailAsync(string userId, string tenant, CancellationToken cancellationToken);
     Task<string> ConfirmPhoneNumberAsync(string userId, string code);
 
     // permisions

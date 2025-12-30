@@ -1,4 +1,4 @@
-@page "/users/{Id:guid}"
+﻿@page "/users/{Id:guid}"
 @using FSH.Playground.Blazor.ApiClient
 @using FSH.Framework.Blazor.UI.Components.Dialogs
 @inherits ComponentBase
@@ -21,6 +21,16 @@
                    OnClick="GoBack">
             Back to Users
         </MudButton>
+        @if (_user != null && !_user.EmailConfirmed && _canConfirmEmail)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       StartIcon="@Icons.Material.Filled.MarkEmailRead"
+                       OnClick="ConfirmEmailDirectly"
+                       Disabled="_busy">
+                Confirm Email
+            </MudButton>
+        }
         @if (_user != null && _canImpersonate && CanImpersonateUser())
         {
             <MudButton Variant="Variant.Filled"
@@ -363,11 +373,12 @@ else
     private string? _currentUserId;
     private bool _targetIsAdmin;
     private bool _canImpersonate;
+    private bool _canConfirmEmail;
 
     protected override async Task OnParametersSetAsync()
     {
         await ResolveCurrentUser();
-        await CheckImpersonationPermission();
+        await CheckPermissions();
         await LoadUser();
     }
 
@@ -522,6 +533,36 @@ else
         }
     }
 
+    private async Task ConfirmEmailDirectly()
+    {
+        if (_user is null || _user.EmailConfirmed) return;
+
+        var confirmed = await DialogService.ShowConfirmAsync(
+            "Confirm Email",
+            $"Are you sure you want to confirm the email for {_user.FirstName} {_user.LastName}? This will mark their email as verified without requiring a confirmation code.",
+            "Confirm",
+            "Cancel",
+            Color.Success);
+
+        if (!confirmed) return;
+
+        _busy = true;
+        try
+        {
+            await UsersClient.AdminConfirmEmailAsync(_user.Id, TenantContext);
+            Snackbar.Add("Email confirmed successfully", Severity.Success);
+            await LoadUser();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to confirm email: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
     private void GoToRoles() => Navigation.NavigateTo($"/users/{Id}/roles");
     private void GoBack() => Navigation.NavigateTo("/users");
 
@@ -574,6 +615,24 @@ else
         public string? Code { get; set; }
     }
 
+    private async Task CheckPermissions()
+    {
+        try
+        {
+            var permissions = await IdentityClient.PermissionsGetAsync();
+            _canImpersonate = permissions?.Contains(FshPermission.NameFor(ActionConstants.Impersonate, ResourceConstants.Users)) ?? false;
+            
+            var hasCreateUsers = permissions?.Contains(FshPermission.NameFor(ActionConstants.Create, ResourceConstants.Users)) ?? false;
+            var hasUpdateUsers = permissions?.Contains(FshPermission.NameFor(ActionConstants.Update, ResourceConstants.Users)) ?? false;
+            _canConfirmEmail = hasCreateUsers && hasUpdateUsers;
+        }
+        catch
+        {
+            _canImpersonate = false;
+            _canConfirmEmail = false;
+        }
+    }
+
     private async Task CheckImpersonationPermission()
     {
         try
@@ -612,7 +671,7 @@ else
                 <div>
                     <p>You are about to impersonate <strong>{_user.FirstName} {_user.LastName}</strong> ({_user.Email}).</p>
                     <p style='color: var(--mud-palette-warning); margin-top: 12px;'>
-                        <strong>?? Warning:</strong> All actions will be performed as this user and will be audited.
+                        <strong>⚠️ Warning:</strong> All actions will be performed as this user and will be audited.
                     </p>
                     <p style='margin-top: 12px;'>
                         To return to your account, use the impersonation banner at the top of the page.

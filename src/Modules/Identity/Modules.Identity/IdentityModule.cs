@@ -23,6 +23,7 @@ using FSH.Modules.Identity.Features.v1.Roles.GetRoleWithPermissions;
 using FSH.Modules.Identity.Features.v1.Roles.UpdateRolePermissions;
 using FSH.Modules.Identity.Features.v1.Roles.UpsertRole;
 using FSH.Modules.Identity.Features.v1.Users;
+using FSH.Modules.Identity.Features.v1.Users.AdminConfirmEmail;
 using FSH.Modules.Identity.Features.v1.Users.AssignUserRoles;
 using FSH.Modules.Identity.Features.v1.Users.ChangePassword;
 using FSH.Modules.Identity.Features.v1.Users.ConfirmEmail;
@@ -155,6 +156,7 @@ public class IdentityModule : IModule
         group.MapCreateOrUpdateRoleEndpoint();
 
         // users
+        group.MapAdminConfirmEmailEndpoint();
         group.MapAssignUserRolesEndpoint();
         group.MapChangePasswordEndpoint();
         group.MapConfirmEmailEndpoint().RequireRateLimiting("auth");

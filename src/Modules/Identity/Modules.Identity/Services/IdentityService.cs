@@ -37,6 +37,9 @@ public sealed class IdentityService : IIdentityService
         var currentTenant = _multiTenantContextAccessor!.MultiTenantContext.TenantInfo;
         if (currentTenant == null) throw new UnauthorizedException();
 
+        var _user = await _userManager.FindByEmailAsync(email.Trim().Normalize());
+        var y = !await _userManager.CheckPasswordAsync(_user, password);
+
         if (string.IsNullOrWhiteSpace(currentTenant.Id)
            || await _userManager.FindByEmailAsync(email.Trim().Normalize()) is not { } user
            || !await _userManager.CheckPasswordAsync(user, password))
