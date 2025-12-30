@@ -1,0 +1,69 @@
+### Variables
+@baseUrl = https://localhost:5285
+@tenantId = root
+@adminEmail = admin@root.com
+@adminPassword = P@ssw0rd
+@targetUserId = 00000000-0000-0000-0000-000000000000
+
+### 1. Login as Admin
+# @name loginAdmin
+POST {{baseUrl}}/api/v1/identity/tokens
+Content-Type: application/json
+X-Tenant: {{tenantId}}
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### Extract admin token
+@adminToken = {{loginAdmin.response.body.$.accessToken}}
+
+### 2. Get list of users (to find a user to impersonate)
+GET {{baseUrl}}/api/v1/identity/users?pageSize=10
+Authorization: Bearer {{adminToken}}
+X-Tenant: {{tenantId}}
+
+### 3. Impersonate a user
+# @name impersonate
+POST {{baseUrl}}/api/v1/identity/impersonate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+X-Tenant: {{tenantId}}
+
+{
+  "userId": "{{targetUserId}}"
+}
+
+### Extract impersonation token
+@impersonationToken = {{impersonate.response.body.$.accessToken}}
+
+### 4. Make requests as impersonated user
+GET {{baseUrl}}/api/v1/identity/me
+Authorization: Bearer {{impersonationToken}}
+X-Tenant: {{tenantId}}
+
+### 5. Get user permissions (should be target user's permissions)
+GET {{baseUrl}}/api/v1/identity/users/permissions
+Authorization: Bearer {{impersonationToken}}
+X-Tenant: {{tenantId}}
+
+### 6. Stop impersonation
+POST {{baseUrl}}/api/v1/identity/impersonate/stop
+Authorization: Bearer {{impersonationToken}}
+X-Tenant: {{tenantId}}
+
+### 7. Try to use impersonation token after stopping (should fail or show warning)
+GET {{baseUrl}}/api/v1/identity/me
+Authorization: Bearer {{impersonationToken}}
+X-Tenant: {{tenantId}}
+
+### 8. Login again as admin to get fresh token
+POST {{baseUrl}}/api/v1/identity/tokens
+Content-Type: application/json
+X-Tenant: {{tenantId}}
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}

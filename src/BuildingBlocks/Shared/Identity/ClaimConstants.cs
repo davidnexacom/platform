@@ -8,4 +8,7 @@ public static class ClaimConstants
     public const string ImageUrl = "image_url";
     public const string IpAddress = "ipAddress";
     public const string Expiration = "exp";
+    public const string Impersonator = "impersonator";
+    public const string ImpersonatorName = "impersonator_name";
+    public const string OriginalUserId = "original_user_id";
 }

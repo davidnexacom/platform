@@ -43,6 +43,7 @@ using FSH.Modules.Identity.Features.v1.Sessions.RevokeAllSessions;
 using FSH.Modules.Identity.Features.v1.Sessions.GetUserSessions;
 using FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeSession;
 using FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeAllSessions;
+using FSH.Modules.Identity.Features.v1.Tokens.Impersonation;
 using FSH.Modules.Identity.Services;
 using Hangfire;
 using Hangfire.Common;
@@ -129,6 +130,10 @@ public class IdentityModule : IModule
         // tokens
         group.MapGenerateTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
         group.MapRefreshTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
+        
+        // impersonation
+        group.MapImpersonateUserEndpoint();
+        group.MapStopImpersonationEndpoint();
 
         // example Hangfire setup for Identity outbox dispatcher
         var jobManager = endpoints.ServiceProvider.GetService<IRecurringJobManager>();

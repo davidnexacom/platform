@@ -18,6 +18,7 @@ public static class PermissionConstants
         new("Update Users", ActionConstants.Update, ResourceConstants.Users),
         new("Delete Users", ActionConstants.Delete, ResourceConstants.Users),
         new("Export Users", ActionConstants.Export, ResourceConstants.Users),
+        new("Impersonate Users", ActionConstants.Impersonate, ResourceConstants.Users),
         new("View UserRoles", ActionConstants.View, ResourceConstants.UserRoles, IsBasic: true),
         new("Update UserRoles", ActionConstants.Update, ResourceConstants.UserRoles),
         new("View Roles", ActionConstants.View, ResourceConstants.Roles, IsBasic: true),
