@@ -1,0 +1,147 @@
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+@if (_isImpersonating)
+{
+    <MudPaper Class="impersonation-banner" Elevation="4" Square="true">
+        <MudContainer MaxWidth="MaxWidth.False" Class="py-3">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body1" Class="fw-700">
+                            Impersonation Mode Active
+                        </MudText>
+                        <MudText Typo="Typo.body2">
+                            You are impersonating: <strong>@_impersonatedUserName</strong>
+                            @if (!string.IsNullOrEmpty(_originalUserName))
+                            {
+                                <span class="text-muted"> (Original: @_originalUserName)</span>
+                            }
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.ExitToApp"
+                           OnClick="StopImpersonation"
+                           Disabled="_stopping">
+                    @(_stopping ? "Stopping..." : "Stop Impersonation")
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+    </MudPaper>
+}
+
+<style>
+    .impersonation-banner {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+        color: white !important;
+        border-radius: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .impersonation-banner .mud-icon-root {
+        color: white !important;
+    }
+
+    .impersonation-banner strong {
+        font-weight: 700;
+        color: white;
+    }
+
+    .impersonation-banner .text-muted {
+        opacity: 0.85;
+        color: white;
+    }
+
+    .impersonation-banner .mud-typography {
+        color: white !important;
+    }
+</style>
+
+@code {
+    private bool _isImpersonating;
+    private string? _impersonatedUserName;
+    private string? _originalUserName;
+    private bool _stopping;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckImpersonationStatus();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckImpersonationStatus();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckImpersonationStatus()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user?.Identity?.IsAuthenticated == true)
+            {
+                // Check for impersonation claims
+                var isImpersonating = user.FindFirst("impersonator") != null;
+                
+                if (isImpersonating)
+                {
+                    _isImpersonating = true;
+                    
+                    // Get impersonated user name
+                    var firstName = user.FindFirst(ClaimTypes.Name)?.Value;
+                    var lastName = user.FindFirst(ClaimTypes.Surname)?.Value;
+                    var email = user.FindFirst(ClaimTypes.Email)?.Value;
+                    
+                    _impersonatedUserName = !string.IsNullOrEmpty(firstName) || !string.IsNullOrEmpty(lastName)
+                        ? $"{firstName} {lastName}".Trim()
+                        : email ?? "Unknown User";
+                    
+                    // Get original user name
+                    var originalName = user.FindFirst("impersonator_name")?.Value;
+                    _originalUserName = originalName ?? "Admin";
+                }
+                else
+                {
+                    _isImpersonating = false;
+                }
+            }
+            else
+            {
+                _isImpersonating = false;
+            }
+        }
+        catch
+        {
+            _isImpersonating = false;
+        }
+    }
+
+    private async Task StopImpersonation()
+    {
+        _stopping = true;
+        
+        try
+        {
+            // Navigate to the stop impersonation endpoint
+            // This will call the backend, restore the original token, and redirect
+            Navigation.NavigateTo("/bff/auth/stop-impersonation", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to stop impersonation: {ex.Message}", Severity.Error);
+            _stopping = false;
+        }
+    }
+}

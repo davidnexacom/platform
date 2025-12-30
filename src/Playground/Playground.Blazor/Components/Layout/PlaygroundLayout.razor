@@ -6,6 +6,7 @@
 @using FSH.Framework.Blazor.UI.Components.Dialogs
 @using FSH.Framework.Blazor.UI.Theme
 @using FSH.Playground.Blazor.Components.Pages
+@using FSH.Playground.Blazor.Components.Shared
 @using Microsoft.AspNetCore.WebUtilities
 @using FSH.Playground.Blazor.Services
 @using Microsoft.AspNetCore.Components.Authorization
@@ -61,6 +62,7 @@ else
             <NavMenu />
         </MudDrawer>
         <MudMainContent Class="pt-20" Style="padding-left:0;padding-right:0;">
+            <ImpersonationBanner />
             <MudContainer Class="fsh-section page-shell" MaxWidth="MaxWidth.False">
                 @Body
             </MudContainer>
@@ -176,6 +178,18 @@ else
                 else if (toast == "session_expired")
                 {
                     Snackbar.Add("Your session has expired. Please sign in again.", Severity.Warning);
+                }
+                else if (toast == "impersonation_stopped")
+                {
+                    Snackbar.Add("Impersonation stopped. Welcome back!", Severity.Success);
+                }
+                else if (toast == "not_impersonating")
+                {
+                    Snackbar.Add("No impersonation session is active.", Severity.Info);
+                }
+                else if (toast == "stop_failed")
+                {
+                    Snackbar.Add("Failed to stop impersonation. Please try again.", Severity.Error);
                 }
 
                 var cleanUri = currentUri.GetLeftPart(UriPartial.Path);

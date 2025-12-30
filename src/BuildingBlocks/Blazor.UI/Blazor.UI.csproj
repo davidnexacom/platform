@@ -20,4 +20,8 @@
     <PackageReference Include="MudBlazor.ThemeManager" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Components\Impersonation\" />
+  </ItemGroup>
+
 </Project>

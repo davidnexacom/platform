@@ -316,7 +316,7 @@ internal sealed partial class UserService(
         _ = user ?? throw new NotFoundException("user not found");
 
         Uri imageUri = user.ImageUrl ?? null!;
-        if (image.Data != null || deleteCurrentImage)
+        if (image?.Data != null || deleteCurrentImage)
         {
             var imageString = await storageService.UploadAsync<FshUser>(image, FileType.Image);
             user.ImageUrl = new Uri(imageString, UriKind.RelativeOrAbsolute);

@@ -261,6 +261,16 @@
                                            Color="Color.Primary"
                                            OnClick="@(() => GoToDetail(context.Item.Id))" />
                         </MudTooltip>
+                        @if (_canImpersonate && CanImpersonateUser(context.Item))
+                        {
+                            <MudTooltip Text="Impersonate User">
+                                <MudIconButton Icon="@Icons.Material.Filled.PersonSearch"
+                                               Size="Size.Small"
+                                               Color="Color.Warning"
+                                               OnClick="@(() => ImpersonateUser(context.Item))"
+                                               Disabled="@(_busyUserId == context.Item.Id)" />
+                            </MudTooltip>
+                        }
                         <MudTooltip Text="Manage Roles">
                             <MudIconButton Icon="@Icons.Material.Filled.AdminPanelSettings"
                                            Size="Size.Small"
@@ -339,6 +349,7 @@
     private string? _currentUserId;
     private readonly Dictionary<string, bool> _adminCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<UserRoleDto>> _userRolesCache = new(StringComparer.OrdinalIgnoreCase);
+    private bool _canImpersonate;
 
     private readonly int _pageSize = 10;
     private readonly int[] _pageSizeOptions = { 5, 10, 25, 50 };
@@ -364,6 +375,7 @@
     protected override async Task OnInitializedAsync()
     {
         await ResolveCurrentUser();
+        await CheckImpersonationPermission();
         await LoadData();
     }
 
@@ -484,6 +496,92 @@
         }
     }
 
+    private async Task CheckImpersonationPermission()
+    {
+        try
+        {
+            var permissions = await IdentityClient.PermissionsGetAsync();
+            _canImpersonate = permissions?.Contains("Permissions.Users.Impersonate") ?? false;
+        }
+        catch
+        {
+            _canImpersonate = false;
+        }
+    }
+
+    private bool CanImpersonateUser(UserDto user)
+    {
+        if (string.IsNullOrEmpty(user.Id) || !user.IsActive)
+            return false;
+
+        if (IsCurrentUser(user))
+            return false;
+
+        return true;
+    }
+
+    private async Task ImpersonateUser(UserDto user)
+    {
+        if (string.IsNullOrEmpty(user.Id))
+        {
+            Snackbar.Add("Invalid user ID", Severity.Error);
+            return;
+        }
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Impersonate User",
+            (MarkupString)$@"
+                <div>
+                    <p>You are about to impersonate <strong>{user.FirstName} {user.LastName}</strong> ({user.Email}).</p>
+                    <p style='color: var(--mud-palette-warning); margin-top: 12px;'>
+                        <strong>?? Warning:</strong> All actions will be performed as this user and will be audited.
+                    </p>
+                    <p style='margin-top: 12px;'>
+                        To return to your account, use the impersonation banner at the top of the page.
+                    </p>
+                </div>
+            ",
+            yesText: "Start Impersonation",
+            cancelText: "Cancel",
+            options: new DialogOptions 
+            { 
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true 
+            }) ?? false;
+
+        if (!confirmed) return;
+
+        _busyUserId = user.Id;
+        try
+        {
+            var command = new ImpersonateUserCommand { UserId = user.Id };
+            var response = await IdentityClient.ImpersonateAsync(command);
+
+            Snackbar.Add($"Now impersonating {user.FirstName} {user.LastName}", Severity.Success);
+
+            // Navigate to special endpoint that will update the cookie with the new token
+            Navigation.NavigateTo($"/bff/auth/impersonate?accessToken={Uri.EscapeDataString(response.AccessToken)}&refreshToken={Uri.EscapeDataString(response.RefreshToken)}", forceLoad: true);
+        }
+        catch (ApiException ex)
+        {
+            var message = ex.StatusCode switch
+            {
+                403 => "You don't have permission to impersonate this user",
+                404 => "User not found",
+                _ => $"Failed to start impersonation: {ex.Message}"
+            };
+            Snackbar.Add(message, Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"An error occurred: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busyUserId = null;
+        }
+    }
+
     private static string GetInitials(UserDto user)
     {
         var first = user.FirstName?.FirstOrDefault() ?? ' ';
@@ -515,19 +613,6 @@
                 builder.CloseComponent();
             }
         };
-    }
-
-    private bool IsCurrentUser(UserDto user) =>
-        !string.IsNullOrWhiteSpace(_currentUserId) &&
-        string.Equals(_currentUserId, user.Id, StringComparison.OrdinalIgnoreCase);
-
-    private bool IsToggleDisabled(UserDto user) =>
-        string.IsNullOrWhiteSpace(user.Id) || _busyUserId == user.Id || IsCurrentUser(user);
-
-    private string GetToggleTooltip(UserDto user)
-    {
-        if (IsCurrentUser(user)) return "Cannot modify your own account";
-        return user.IsActive ? "Deactivate user" : "Activate user";
     }
 
     private async Task<bool> IsUserAdminAsync(string userId)
@@ -777,5 +862,18 @@
         {
             await LoadData();
         }
+    }
+
+    private bool IsCurrentUser(UserDto user) =>
+        !string.IsNullOrWhiteSpace(_currentUserId) &&
+        string.Equals(_currentUserId, user.Id, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsToggleDisabled(UserDto user) =>
+        string.IsNullOrWhiteSpace(user.Id) || _busyUserId == user.Id || IsCurrentUser(user);
+
+    private string GetToggleTooltip(UserDto user)
+    {
+        if (IsCurrentUser(user)) return "Cannot modify your own account";
+        return user.IsActive ? "Deactivate user" : "Activate user";
     }
 }

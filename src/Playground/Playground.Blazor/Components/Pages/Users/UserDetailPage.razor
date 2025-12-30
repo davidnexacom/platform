@@ -21,6 +21,16 @@
                    OnClick="GoBack">
             Back to Users
         </MudButton>
+        @if (_user != null && _canImpersonate && CanImpersonateUser())
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       StartIcon="@Icons.Material.Filled.PersonSearch"
+                       OnClick="ImpersonateUser"
+                       Disabled="_busy">
+                Impersonate
+            </MudButton>
+        }
         @if (_user != null)
         {
             <MudButton Variant="Variant.Outlined"
@@ -352,10 +362,12 @@ else
     private const string TenantContext = "root";
     private string? _currentUserId;
     private bool _targetIsAdmin;
+    private bool _canImpersonate;
 
     protected override async Task OnParametersSetAsync()
     {
         await ResolveCurrentUser();
+        await CheckImpersonationPermission();
         await LoadUser();
     }
 
@@ -560,5 +572,91 @@ else
     {
         public string UserId { get; set; } = string.Empty;
         public string? Code { get; set; }
+    }
+
+    private async Task CheckImpersonationPermission()
+    {
+        try
+        {
+            var permissions = await IdentityClient.PermissionsGetAsync();
+            _canImpersonate = permissions?.Contains("Permissions.Users.Impersonate") ?? false;
+        }
+        catch
+        {
+            _canImpersonate = false;
+        }
+    }
+
+    private bool CanImpersonateUser()
+    {
+        if (_user is null || string.IsNullOrEmpty(_user.Id) || !_user.IsActive)
+            return false;
+
+        if (IsCurrentUser)
+            return false;
+
+        return true;
+    }
+
+    private async Task ImpersonateUser()
+    {
+        if (_user is null || string.IsNullOrEmpty(_user.Id))
+        {
+            Snackbar.Add("Invalid user", Severity.Error);
+            return;
+        }
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Impersonate User",
+            (MarkupString)$@"
+                <div>
+                    <p>You are about to impersonate <strong>{_user.FirstName} {_user.LastName}</strong> ({_user.Email}).</p>
+                    <p style='color: var(--mud-palette-warning); margin-top: 12px;'>
+                        <strong>?? Warning:</strong> All actions will be performed as this user and will be audited.
+                    </p>
+                    <p style='margin-top: 12px;'>
+                        To return to your account, use the impersonation banner at the top of the page.
+                    </p>
+                </div>
+            ",
+            yesText: "Start Impersonation",
+            cancelText: "Cancel",
+            options: new DialogOptions 
+            { 
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true 
+            }) ?? false;
+
+        if (!confirmed) return;
+
+        _busy = true;
+        try
+        {
+            var command = new ImpersonateUserCommand { UserId = _user.Id };
+            var response = await IdentityClient.ImpersonateAsync(command);
+
+            Snackbar.Add($"Now impersonating {_user.FirstName} {_user.LastName}", Severity.Success);
+
+            // Navigate to special endpoint that will update the cookie with the new token
+            Navigation.NavigateTo($"/bff/auth/impersonate?accessToken={Uri.EscapeDataString(response.AccessToken)}&refreshToken={Uri.EscapeDataString(response.RefreshToken)}", forceLoad: true);
+        }
+        catch (ApiException ex)
+        {
+            var message = ex.StatusCode switch
+            {
+                403 => "You don't have permission to impersonate this user",
+                404 => "User not found",
+                _ => $"Failed to start impersonation: {ex.Message}"
+            };
+            Snackbar.Add(message, Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"An error occurred: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 }
