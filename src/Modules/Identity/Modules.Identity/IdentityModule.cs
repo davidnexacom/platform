@@ -79,6 +79,7 @@ public class IdentityModule : IModule
         services.AddTransient<IRoleService, RoleService>();
         services.AddHeroStorage(builder.Configuration);
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IPermissionCacheInvalidator, PermissionCacheInvalidator>();
         services.AddHeroDbContext<IdentityDbContext>();
         services.AddEventingCore(builder.Configuration);
         services.AddEventingForDbContext<IdentityDbContext>();

@@ -1,0 +1,26 @@
+@using FSH.BuildingBlocks.Blazor.UI.Authorization
+@using FSH.Framework.Blazor.UI.Authorization
+@using FSH.Playground.Blazor.Services
+@inject IPermissionService PermissionService
+
+<AuthorizePermission 
+    Permission="@Permission"
+    Permissions="@Permissions"
+    RequireAll="@RequireAll"
+    HasPermissionAsync="@PermissionService.HasPermissionAsync">
+    @ChildContent
+</AuthorizePermission>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public string? Permission { get; set; }
+    
+    [Parameter]
+    public string[]? Permissions { get; set; }
+    
+    [Parameter]
+    public bool RequireAll { get; set; }
+}

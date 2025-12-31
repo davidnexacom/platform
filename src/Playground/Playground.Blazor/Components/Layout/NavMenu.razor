@@ -74,14 +74,28 @@
         {
             try
             {
-                _userPermissions = await PermissionService.GetPermissionsAsync();
-                Logger.LogInformation("Loaded {Count} permissions for user from API", _userPermissions.Count);
+                var permissionsResult = await PermissionService.GetPermissionsAsync();
+                
+                if (permissionsResult == null)
+                {
+                    Logger.LogWarning("Failed to load user permissions - permissions will be empty");
+                    _userPermissions = new List<string>();
+                }
+                else
+                {
+                    _userPermissions = permissionsResult;
+                    Logger.LogInformation("Loaded {Count} permissions for user from API", _userPermissions.Count);
+                }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to load user permissions");
+                Logger.LogError(ex, "Exception loading user permissions");
                 _userPermissions = new List<string>();
             }
+        }
+        else
+        {
+            _userPermissions = new List<string>();
         }
 
         // Get sections and items from registry

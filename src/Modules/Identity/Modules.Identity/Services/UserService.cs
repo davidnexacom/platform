@@ -374,6 +374,9 @@ internal sealed partial class UserService(
             List<string> errors = result.Errors.Select(error => error.Description).ToList();
             throw new CustomException("Delete profile failed", errors);
         }
+
+        // ✅ Invalidate permission cache for this user
+        await InvalidatePermissionCacheAsync(userId, CancellationToken.None);
     }
 
     private async Task<string> GetEmailVerificationUriAsync(FshUser user, string origin)
@@ -503,8 +506,10 @@ internal sealed partial class UserService(
             }
         }
 
-        return "User Roles Updated Successfully.";
+        // ✅ Invalidate permission cache for this user
+        await InvalidatePermissionCacheAsync(userId, cancellationToken);
 
+        return "User Roles Updated Successfully.";
     }
 
     public async Task<List<UserRoleDto>> GetUserRolesAsync(string userId, CancellationToken cancellationToken)

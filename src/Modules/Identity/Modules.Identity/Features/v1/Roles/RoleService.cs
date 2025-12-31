@@ -7,6 +7,7 @@ using FSH.Modules.Identity.Contracts.DTOs;
 using FSH.Modules.Identity.Contracts.Services;
 using FSH.Modules.Identity.Data;
 using FSH.Modules.Identity.Features.v1.RoleClaims;
+using FSH.Modules.Identity.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +16,8 @@ namespace FSH.Modules.Identity.Features.v1.Roles;
 public class RoleService(RoleManager<FshRole> roleManager,
     IdentityDbContext context,
     IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
-    ICurrentUser currentUser) : IRoleService
+    ICurrentUser currentUser,
+    IPermissionCacheInvalidator cacheInvalidator) : IRoleService
 {
     public async Task<IEnumerable<RoleDto>> GetRolesAsync()
     {
@@ -66,6 +68,9 @@ public class RoleService(RoleManager<FshRole> roleManager,
         FshRole? role = await roleManager.FindByIdAsync(id);
 
         _ = role ?? throw new NotFoundException("role not found");
+
+        // Invalidate cache for all users with this role before deleting
+        await cacheInvalidator.InvalidateRolePermissionsAsync(id);
 
         await roleManager.DeleteAsync(role);
     }
@@ -128,6 +133,9 @@ public class RoleService(RoleManager<FshRole> roleManager,
                 await context.SaveChangesAsync();
             }
         }
+
+        // ✅ Invalidate permission cache for all users with this role
+        await cacheInvalidator.InvalidateRolePermissionsAsync(roleId);
 
         return "permissions updated";
     }

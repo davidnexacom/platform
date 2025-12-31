@@ -1,0 +1,189 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.Logging
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+@if (_isAuthorized)
+{
+    @ChildContent
+}
+else if (!_isLoading && !_isAuthorized)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+        <MudPaper Class="pa-8" Elevation="2">
+            <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Large" Color="Color.Error" />
+                <MudText Typo="Typo.h5" Align="Align.Center">Access Denied</MudText>
+                <MudText Typo="Typo.body1" Align="Align.Center" Class="text-muted">
+                    You don't have the required permissions to access this page.
+                </MudText>
+                @if (!string.IsNullOrEmpty(_requiredPermissionsDisplay))
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                        <MudText Typo="Typo.body2">
+                            <strong>Required @(_requireAll ? "Permissions (all)" : "Permissions (any)"):</strong>
+                        </MudText>
+                        <MudList T="string" Dense="true" DisablePadding="true">
+                            @foreach (var perm in _requiredPermissions)
+                            {
+                                <MudListItem T="string" Dense="true" DisableGutters="true">
+                                    <MudText Typo="Typo.caption" Class="ml-4">• @FormatPermission(perm)</MudText>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudAlert>
+                }
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           OnClick="GoBack">
+                    Go Back
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudContainer>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.False" Class="d-flex justify-center align-center" Style="min-height:50vh;">
+        <MudStack AlignItems="AlignItems.Center" Spacing="3">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+            <MudText Typo="Typo.body1">Checking permissions...</MudText>
+        </MudStack>
+    </MudContainer>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public RenderFragment? ChildContent { get; set; }
+    
+    /// <summary>
+    /// Single permission required (alternative to Permissions array)
+    /// </summary>
+    [Parameter]
+    public string? Permission { get; set; }
+    
+    /// <summary>
+    /// Array of permissions required
+    /// </summary>
+    [Parameter]
+    public string[]? Permissions { get; set; }
+    
+    /// <summary>
+    /// If true, ALL permissions are required (AND logic).
+    /// If false, AT LEAST ONE permission is required (OR logic).
+    /// Default is false (OR logic).
+    /// </summary>
+    [Parameter]
+    public bool RequireAll { get; set; }
+    
+    /// <summary>
+    /// Function to check if user has a specific permission.
+    /// Must be provided by parent/dependency injection.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<string, Task<bool>>? HasPermissionAsync { get; set; }
+
+    private bool _isLoading = true;
+    private bool _isAuthorized;
+    private string[] _requiredPermissions = Array.Empty<string>();
+    private string _requiredPermissionsDisplay = string.Empty;
+    private bool _requireAll;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckAuthorizationAsync();
+    }
+
+    private async Task CheckAuthorizationAsync()
+    {
+        _isLoading = true;
+        
+        try
+        {
+            // Get required permissions
+            if (Permission != null)
+            {
+                _requiredPermissions = new[] { Permission };
+            }
+            else if (Permissions != null && Permissions.Length > 0)
+            {
+                _requiredPermissions = Permissions;
+            }
+            else
+            {
+                // No permissions specified, allow access
+                _isAuthorized = true;
+                return;
+            }
+
+            _requireAll = RequireAll;
+            _requiredPermissionsDisplay = string.Join(", ", _requiredPermissions.Select(FormatPermission));
+
+            // Check if user is authenticated
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authState?.User?.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login", forceLoad: true);
+                return;
+            }
+
+            // Check if HasPermissionAsync was provided
+            if (HasPermissionAsync == null)
+            {
+                throw new InvalidOperationException(
+                    "HasPermissionAsync parameter must be provided to AuthorizePermission component.");
+            }
+
+            // Check permissions
+            if (_requireAll)
+            {
+                // AND logic: user must have ALL required permissions
+                var checks = await Task.WhenAll(
+                    _requiredPermissions.Select(p => HasPermissionAsync(p)));
+                _isAuthorized = checks.All(result => result);
+            }
+            else
+            {
+                // OR logic: user must have AT LEAST ONE required permission
+                var checks = await Task.WhenAll(
+                    _requiredPermissions.Select(p => HasPermissionAsync(p)));
+                _isAuthorized = checks.Any(result => result);
+            }
+        }
+        catch (Exception)
+        {
+            _isAuthorized = false;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private static string FormatPermission(string permission)
+    {
+        // Format "Permissions.Users.View" -> "View Users"
+        var parts = permission.Split('.');
+        if (parts.Length >= 3)
+        {
+            var action = parts[2];
+            var resource = parts[1];
+            
+            // Add spaces before capital letters
+            action = string.Concat(action.Select((c, i) =>
+                i > 0 && char.IsUpper(c) ? " " + c : c.ToString()));
+            resource = string.Concat(resource.Select((c, i) =>
+                i > 0 && char.IsUpper(c) ? " " + c : c.ToString()));
+            
+            return $"{action} {resource}";
+        }
+        return permission;
+    }
+}
