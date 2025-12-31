@@ -7,6 +7,7 @@ using FSH.Framework.Identity.v1.Tokens.TokenGeneration;
 using FSH.Framework.Infrastructure.Identity.Users.Endpoints;
 using FSH.Framework.Infrastructure.Identity.Users.Services;
 using FSH.Framework.Persistence;
+using FSH.Framework.Shared.Constants;
 using FSH.Framework.Storage.Local;
 using FSH.Framework.Storage.Services;
 using FSH.Framework.Storage;
@@ -65,6 +66,10 @@ public class IdentityModule : IModule
     public void ConfigureServices(IHostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        // Register Identity module permissions
+        PermissionConstants.Register(IdentityPermissionConstants.Instance.All);
+
         var services = builder.Services;
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
         services.AddScoped<ICurrentUser, CurrentUserService>();

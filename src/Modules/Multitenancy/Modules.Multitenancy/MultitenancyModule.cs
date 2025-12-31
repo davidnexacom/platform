@@ -8,6 +8,7 @@ using FSH.Framework.Persistence;
 using FSH.Framework.Shared.Constants;
 using FSH.Framework.Shared.Multitenancy;
 using FSH.Framework.Web.Modules;
+using FSH.Modules.Multitenancy.Authorization;
 using FSH.Modules.Multitenancy.Contracts;
 using FSH.Modules.Multitenancy.Data;
 using FSH.Modules.Multitenancy.Features.v1.ChangeTenantActivation;
@@ -36,6 +37,9 @@ public sealed class MultitenancyModule : IModule
     public void ConfigureServices(IHostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        // Register Multitenancy module permissions
+        PermissionConstants.Register(MultitenancyPermissionConstants.Instance.All);
 
         builder.Services.AddOptions<MultitenancyOptions>()
             .Bind(builder.Configuration.GetSection(nameof(MultitenancyOptions)));

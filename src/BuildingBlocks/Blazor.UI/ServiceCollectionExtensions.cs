@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FSH.BuildingBlocks.Blazor.UI.Navigation;
+using Microsoft.Extensions.DependencyInjection;
 namespace FSH.Framework.Blazor.UI;
 
 public static class ServiceCollectionExtensions
@@ -16,6 +17,9 @@ public static class ServiceCollectionExtensions
         services.AddMudPopoverService();
         services.AddScoped<FSH.Framework.Blazor.UI.Components.Feedback.Snackbar.FshSnackbar>();
         services.AddSingleton(FSH.Framework.Blazor.UI.Theme.FshTheme.Build());
+
+        // Register navigation registry
+        services.AddSingleton<INavigationRegistry, NavigationRegistry>();
 
         return services;
     }

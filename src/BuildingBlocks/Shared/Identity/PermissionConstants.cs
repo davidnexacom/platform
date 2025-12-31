@@ -1,62 +1,108 @@
 ﻿namespace FSH.Framework.Shared.Constants;
+
+/// <summary>
+/// Central permission registry.
+/// Modules should register their permissions using the Register() method during initialization.
+/// </summary>
 public static class PermissionConstants
 {
     private static readonly List<FshPermission> _all = new()
     {
-        // Built-in permissions
-
-        // Tenants
-        new("View Tenants", ActionConstants.View, ResourceConstants.Tenants, IsRoot: true),
-        new("Create Tenants", ActionConstants.Create, ResourceConstants.Tenants, IsRoot: true),
-        new("Update Tenants", ActionConstants.Update, ResourceConstants.Tenants, IsRoot: true),
-        new("Upgrade Tenant Subscription", ActionConstants.UpgradeSubscription, ResourceConstants.Tenants, IsRoot: true),
-
-        // Identity
-        new("View Users", ActionConstants.View, ResourceConstants.Users, IsBasic: true),
-        new("Search Users", ActionConstants.Search, ResourceConstants.Users),
-        new("Create Users", ActionConstants.Create, ResourceConstants.Users),
-        new("Update Users", ActionConstants.Update, ResourceConstants.Users),
-        new("Delete Users", ActionConstants.Delete, ResourceConstants.Users),
-        new("Export Users", ActionConstants.Export, ResourceConstants.Users),
-        new("Impersonate Users", ActionConstants.Impersonate, ResourceConstants.Users),
-        new("View UserRoles", ActionConstants.View, ResourceConstants.UserRoles, IsBasic: true),
-        new("Update UserRoles", ActionConstants.Update, ResourceConstants.UserRoles),
-        new("View Roles", ActionConstants.View, ResourceConstants.Roles, IsBasic: true),
-        new("Create Roles", ActionConstants.Create, ResourceConstants.Roles),
-        new("Update Roles", ActionConstants.Update, ResourceConstants.Roles),
-        new("Delete Roles", ActionConstants.Delete, ResourceConstants.Roles),
-        new("View RoleClaims", ActionConstants.View, ResourceConstants.RoleClaims, IsBasic: true),
-        new("Update RoleClaims", ActionConstants.Update, ResourceConstants.RoleClaims),
-
-        // Audit
-        new("View Audit Trails", ActionConstants.View, ResourceConstants.AuditTrails, IsBasic: true),
-
+        // Core platform permissions (not module-specific)
+        
         // Hangfire / Dashboard
-        new("View Hangfire", ActionConstants.View, ResourceConstants.Hangfire, IsBasic: true),
-        new("View Dashboard", ActionConstants.View, ResourceConstants.Dashboard, IsBasic: true),
+        new(ActionConstants.View, ResourceConstants.Hangfire, IsBasic: true),
+        new(ActionConstants.View, ResourceConstants.Dashboard, IsBasic: true),
     };
 
     /// <summary>
     /// Register additional permissions from external projects/modules.
+    /// Modules should call this during their initialization to register their permissions.
     /// </summary>
+    /// <param name="additionalPermissions">Permissions to register</param>
     public static void Register(IEnumerable<FshPermission> additionalPermissions)
     {
+        ArgumentNullException.ThrowIfNull(additionalPermissions);
+        
         _all.AddRange(from permission in additionalPermissions
                       where !_all.Any(p => p.Name == permission.Name)
                       select permission);
     }
+
     public const string RequiredPermissionPolicyName = "RequiredPermission";
+    
+    /// <summary>
+    /// All registered permissions (core + modules).
+    /// </summary>
     public static IReadOnlyList<FshPermission> All => _all.AsReadOnly();
+    
+    /// <summary>
+    /// Permissions that require root tenant access.
+    /// </summary>
     public static IReadOnlyList<FshPermission> Root => [.. _all.Where(p => p.IsRoot)];
+    
+    /// <summary>
+    /// Admin-level permissions (non-root).
+    /// </summary>
     public static IReadOnlyList<FshPermission> Admin => [.. _all.Where(p => !p.IsRoot)];
+    
+    /// <summary>
+    /// Basic permissions available to all authenticated users.
+    /// </summary>
     public static IReadOnlyList<FshPermission> Basic => [.. _all.Where(p => p.IsBasic)];
 }
 
-public record FshPermission(string Description, string Action, string Resource, bool IsBasic = false, bool IsRoot = false)
+/// <summary>
+/// Represents a permission in the system.
+/// Permissions are formatted as "Permissions.{Resource}.{Action}".
+/// </summary>
+/// <param name="Action">The action (e.g., View, Create, Update, Delete)</param>
+/// <param name="Resource">The resource (e.g., Users, Roles, Tenants)</param>
+/// <param name="IsBasic">Whether this permission is included in the Basic role</param>
+/// <param name="IsRoot">Whether this permission requires root tenant access</param>
+public record FshPermission(string Action, string Resource, bool IsBasic = false, bool IsRoot = false)
 {
+    /// <summary>
+    /// Gets the full permission name in format "Permissions.{Resource}.{Action}".
+    /// </summary>
     public string Name => NameFor(Action, Resource);
+    
+    /// <summary>
+    /// Gets a human-readable description generated from Action and Resource.
+    /// </summary>
+    public string Description => $"{FormatAction(Action)} {FormatResource(Resource)}";
+    
+    /// <summary>
+    /// Builds a permission name from action and resource.
+    /// </summary>
     public static string NameFor(string action, string resource)
     {
         return $"Permissions.{resource}.{action}";
+    }
+    
+    /// <summary>
+    /// Formats an action name for display (e.g., "UpgradeSubscription" -> "Upgrade Subscription").
+    /// </summary>
+    private static string FormatAction(string action)
+    {
+        if (string.IsNullOrEmpty(action)) return action;
+        
+        // Add spaces before capital letters
+        return string.Concat(action.Select((c, i) =>
+            i > 0 && char.IsUpper(c) ? " " + c : c.ToString()));
+    }
+    
+    /// <summary>
+    /// Formats a resource name for display (handles singular/plural).
+    /// </summary>
+    private static string FormatResource(string resource)
+    {
+        if (string.IsNullOrEmpty(resource)) return resource;
+        
+        // Add spaces before capital letters
+        var formatted = string.Concat(resource.Select((c, i) =>
+            i > 0 && char.IsUpper(c) ? " " + c : c.ToString()));
+        
+        return formatted;
     }
 }

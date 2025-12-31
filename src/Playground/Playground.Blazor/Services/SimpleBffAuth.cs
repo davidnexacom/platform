@@ -96,16 +96,28 @@ internal static class SimpleBffAuth
         .DisableAntiforgery();
 
         // Logout endpoint - POST for API calls
-        app.MapPost("/bff/auth/logout", async (HttpContext httpContext) =>
+        app.MapPost("/bff/auth/logout", async (
+            HttpContext httpContext,
+            IServiceProvider serviceProvider) =>
         {
+            // Clear permissions cache
+            var permissionService = serviceProvider.GetService<IPermissionService>();
+            permissionService?.ClearCache();
+            
             await httpContext.SignOutAsync("Cookies");
             return Results.Ok();
         })
         .DisableAntiforgery();
 
         // Logout endpoint - GET for browser redirects (ensures cookie is cleared in browser)
-        app.MapGet("/auth/logout", async (HttpContext httpContext) =>
+        app.MapGet("/auth/logout", async (
+            HttpContext httpContext,
+            IServiceProvider serviceProvider) =>
         {
+            // Clear permissions cache
+            var permissionService = serviceProvider.GetService<IPermissionService>();
+            permissionService?.ClearCache();
+            
             await httpContext.SignOutAsync("Cookies");
             return Results.Redirect("/login?toast=logout_success");
         })

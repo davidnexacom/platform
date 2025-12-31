@@ -1,11 +1,14 @@
+using FSH.BuildingBlocks.Blazor.UI.Modules;
+using FSH.BuildingBlocks.Blazor.UI.Navigation;
 using FSH.Framework.Blazor.UI;
 using FSH.Framework.Blazor.UI.Theme;
 using FSH.Playground.Blazor;
 using FSH.Playground.Blazor.Components;
+using FSH.Playground.Blazor.Navigation;
 using FSH.Playground.Blazor.Services;
 using FSH.Playground.Blazor.Services.Api;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server.Circuits;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +54,9 @@ builder.Services.AddScoped<IThemeStateFactory, CachedThemeStateFactory>(); // Fo
 
 // User profile state for syncing across components
 builder.Services.AddScoped<IUserProfileState, UserProfileState>();
+
+// Permission service for checking permissions via API
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 
 // Authorization header handler for API calls
 builder.Services.AddScoped<AuthorizationHeaderHandler>();
@@ -109,6 +115,24 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
+
+// Configure navigation menu from application and modules
+// This must be done after Build() to get the actual service provider
+using (var scope = app.Services.CreateScope())
+{
+    var navigationRegistry = scope.ServiceProvider.GetRequiredService<INavigationRegistry>();
+    
+    // Configure base navigation
+    PlaygroundNavigationConfiguration.ConfigureNavigation(navigationRegistry);
+    
+    // Load navigation from modules (discovers IBlazorModule implementations)
+    BlazorModuleLoader.ConfigureModuleNavigation(
+        navigationRegistry,
+        Assembly.GetExecutingAssembly()); // Can add more assemblies as needed
+
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("Navigation configured: {SectionCount} sections", navigationRegistry.GetSections().Count);
+}
 
 if (!app.Environment.IsDevelopment())
 {

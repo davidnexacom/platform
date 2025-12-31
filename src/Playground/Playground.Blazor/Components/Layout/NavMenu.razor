@@ -1,103 +1,122 @@
 @using FSH.Framework.Shared.Constants
 @using FSH.Framework.Shared.Multitenancy
 @using Microsoft.AspNetCore.Components.Authorization
+@using FSH.BuildingBlocks.Blazor.UI.Navigation
+@using FSH.Playground.Blazor.Services
+@using System.Security.Claims
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject INavigationRegistry NavigationRegistry
+@inject IPermissionService PermissionService
+@inject ILogger<NavMenu> Logger
 
 <nav class="fsh-nav">
     <MudNavMenu Class="pa-2" Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
-        <!-- Home - Root Item -->
-        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Home">
-            Home
-        </MudNavLink>
-
-        <!-- Administration Section -->
-        <div class="fsh-nav-section-title">Administration</div>
-
-        <MudNavLink Href="/users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Person">
-            Users
-        </MudNavLink>
-        <MudNavLink Href="/roles" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.AdminPanelSettings">
-            Roles
-        </MudNavLink>
-
-        @if (_isRootTenantAdmin)
+        @foreach (var navSection in _visibleSections)
         {
-            <MudNavLink Href="/tenants" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.CorporateFare">
-                Tenants
-            </MudNavLink>
-            <MudNavLink Href="/tenants/settings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Tune">
-                Tenant Settings
-            </MudNavLink>
+            if (navSection.Id == NavigationSections.Home)
+            {
+                <!-- Home items without section header -->
+                @foreach (var item in _itemsBySection.GetValueOrDefault(navSection.Id, []))
+                {
+                    if (ShouldShowItem(item))
+                    {
+                        <MudNavLink Href="@item.Href" Match="NavLinkMatch.All" Icon="@item.Icon">
+                            @item.Title
+                        </MudNavLink>
+                    }
+                }
+            }
+            else
+            {
+                var sectionItems = _itemsBySection.GetValueOrDefault(navSection.Id, [])
+                    .Where(ShouldShowItem)
+                    .ToList();
+
+                @if (sectionItems.Any())
+                {
+                    <!-- Section title -->
+                    <div class="fsh-nav-section-title">@navSection.Title</div>
+
+                    <!-- Section items -->
+                    @foreach (var item in sectionItems)
+                    {
+                        <MudNavLink Href="@item.Href" Match="NavLinkMatch.Prefix" Icon="@item.Icon">
+                            @item.Title
+                        </MudNavLink>
+                    }
+                }
+            }
         }
-
-        <MudNavLink Href="/audits" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.History">
-            Audit Logs
-        </MudNavLink>
-
-        <!-- Communication Section -->
-        <div class="fsh-nav-section-title">Communication</div>
-
-        <MudNavLink Href="/chat" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Chat">
-            Chat
-        </MudNavLink>
-
-        <MudNavLink Href="/notifications" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Notifications">
-            Notifications
-        </MudNavLink>
-
-        <!-- System Section -->
-        <div class="fsh-nav-section-title">System</div>
-
-        <MudNavLink Href="/health" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.MonitorHeart">
-            Health
-        </MudNavLink>
-
-        <MudNavLink Href="/logs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Terminal">
-            Logs
-        </MudNavLink>
-
-        <!-- Settings Section -->
-        <div class="fsh-nav-section-title">Settings</div>
-
-        <MudNavLink Href="/settings/profile" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.ManageAccounts">
-            Account
-        </MudNavLink>
-        <MudNavLink Href="/settings/theme" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Palette">
-            Theme
-        </MudNavLink>
-        <MudNavLink Href="/settings/security" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Security">
-            Security
-        </MudNavLink>
-        <MudNavLink Href="/sessions" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Devices">
-            Sessions
-        </MudNavLink>
-
-        <MudNavLink Href="/about" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Info">
-            About
-        </MudNavLink>
     </MudNavMenu>
 </nav>
 
 @code {
     private bool _isRootTenantAdmin;
+    private IReadOnlyList<NavigationSection> _visibleSections = [];
+    private Dictionary<string, IReadOnlyList<NavigationItem>> _itemsBySection = [];
+    private ClaimsPrincipal? _user;
+    private List<string> _userPermissions = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await CheckRootTenantAdmin();
+        await LoadNavigationAsync();
     }
 
-    private async Task CheckRootTenantAdmin()
+    private async Task LoadNavigationAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _user = authState.User;
+        _isRootTenantAdmin = CheckRootTenantAdmin(_user);
+
+        // Load user permissions from API
+        if (_user?.Identity?.IsAuthenticated == true)
+        {
+            try
+            {
+                _userPermissions = await PermissionService.GetPermissionsAsync();
+                Logger.LogInformation("Loaded {Count} permissions for user from API", _userPermissions.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load user permissions");
+                _userPermissions = new List<string>();
+            }
+        }
+
+        // Get sections and items from registry
+        _visibleSections = NavigationRegistry.GetSections();
+        _itemsBySection = _visibleSections
+            .ToDictionary(
+                s => s.Id,
+                s => NavigationRegistry.GetItemsForSection(s.Id));
+
+        // Debug logging
+        Logger.LogInformation("NavMenu: Total sections: {SectionCount}", _visibleSections.Count);
+        Logger.LogInformation("NavMenu: User has {PermissionCount} permissions", _userPermissions.Count);
+        
+        foreach (var section in _visibleSections)
+        {
+            var items = _itemsBySection.GetValueOrDefault(section.Id, []);
+            Logger.LogInformation("NavMenu: Section '{SectionTitle}' has {ItemCount} items", section.Title, items.Count);
+            foreach (var item in items)
+            {
+                var shouldShow = ShouldShowItem(item);
+                Logger.LogInformation("NavMenu: Item '{ItemTitle}' visible: {IsVisible}", item.Title, shouldShow);
+            }
+        }
+    }
+
+    private bool CheckRootTenantAdmin(ClaimsPrincipal? user)
+    {
+        if (user == null)
+            return false;
+
         try
         {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
             if (user.Identity?.IsAuthenticated != true)
             {
-                _isRootTenantAdmin = false;
-                return;
+                return false;
             }
 
             var tenant = user.FindFirst(CustomClaims.Tenant)?.Value;
@@ -106,11 +125,83 @@
             var roles = user.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
             var isAdmin = roles.Any(r => string.Equals(r, RoleConstants.Admin, StringComparison.OrdinalIgnoreCase));
 
-            _isRootTenantAdmin = isRootTenant && isAdmin;
+            return isRootTenant && isAdmin;
         }
         catch
         {
-            _isRootTenantAdmin = false;
+            return false;
         }
+    }
+
+    private bool ShouldShowItem(NavigationItem item)
+    {
+        if (!item.IsVisible)
+        {
+            Logger.LogDebug("Item '{ItemTitle}' not visible (IsVisible=false)", item.Title);
+            return false;
+        }
+
+        // If item has no restrictions, show it regardless of authentication
+        var hasRestrictions = item.RequiresRootTenantAdmin 
+            || !string.IsNullOrWhiteSpace(item.RequiredPermission)
+            || item.RequiredRoles?.Length > 0;
+
+        if (!hasRestrictions)
+        {
+            Logger.LogDebug("Item '{ItemTitle}' has no restrictions, showing", item.Title);
+            return true;
+        }
+
+        // For items with restrictions, check authentication
+        if (_user?.Identity?.IsAuthenticated != true)
+        {
+            Logger.LogDebug("Item '{ItemTitle}' requires auth but user not authenticated", item.Title);
+            return false;
+        }
+
+        // Check root tenant admin requirement
+        if (item.RequiresRootTenantAdmin && !_isRootTenantAdmin)
+        {
+            Logger.LogDebug("Item '{ItemTitle}' requires root tenant admin but user is not", item.Title);
+            return false;
+        }
+
+        // Check permission requirement - NOW USES API CALL RESULTS
+        if (!string.IsNullOrWhiteSpace(item.RequiredPermission))
+        {
+            Logger.LogInformation("Checking permission for item '{ItemTitle}': {Permission}", 
+                item.Title, item.RequiredPermission);
+            
+            Logger.LogDebug("User permissions from API: {@Permissions}", _userPermissions);
+            
+            var hasPermission = _userPermissions.Contains(item.RequiredPermission);
+            
+            Logger.LogInformation("Permission check for '{Permission}': {Result}", 
+                item.RequiredPermission, hasPermission ? "GRANTED" : "DENIED");
+            
+            if (!hasPermission)
+                return false;
+        }
+
+        // Check role requirements
+        if (item.RequiredRoles?.Length > 0)
+        {
+            var userRoles = _user.FindAll(System.Security.Claims.ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Logger.LogInformation("Checking roles for item '{ItemTitle}'. Required: {@RequiredRoles}, User has: {@UserRoles}", 
+                item.Title, item.RequiredRoles, userRoles);
+
+            var hasRequiredRole = item.RequiredRoles.Any(r => userRoles.Contains(r));
+            
+            Logger.LogInformation("Role check: {Result}", hasRequiredRole ? "GRANTED" : "DENIED");
+            
+            if (!hasRequiredRole)
+                return false;
+        }
+
+        Logger.LogInformation("Item '{ItemTitle}' passed all checks, showing", item.Title);
+        return true;
     }
 }

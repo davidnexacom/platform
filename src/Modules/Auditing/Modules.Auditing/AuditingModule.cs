@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using FSH.Framework.Persistence;
+using FSH.Framework.Shared.Constants;
 using FSH.Framework.Web.Modules;
+using FSH.Modules.Auditing.Authorization;
 using FSH.Modules.Auditing.Contracts;
 using FSH.Modules.Auditing.Features.v1.GetAuditById;
 using FSH.Modules.Auditing.Features.v1.GetAudits;
@@ -25,6 +27,10 @@ public class AuditingModule : IModule
     public void ConfigureServices(IHostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+        
+        // Register Auditing module permissions
+        PermissionConstants.Register(AuditingPermissionConstants.Instance.All);
+        
         var httpOpts = builder.Configuration.GetSection("Auditing").Get<AuditHttpOptions>() ?? new AuditHttpOptions();
         builder.Services.AddSingleton(httpOpts);
         builder.Services.AddHttpContextAccessor();
