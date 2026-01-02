@@ -57,11 +57,9 @@ public sealed class GenerateTokenCommandHandler
             ip = http?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         }
         
-        var ua = http?.Request.Headers["X-Forwarded-User-Agent"].ToString();
-        if (string.IsNullOrWhiteSpace(ua))
-        {
-            ua = http?.Request.Headers.UserAgent.ToString() ?? "unknown";
-        }
+        // Get User-Agent string for auditing and session storage
+        // Note: SessionService will parse Client Hints from HttpContext directly
+        var ua = GetUserAgentString(http?.Request.Headers);
         
         var clientId = http?.Request.Headers["X-Client-Id"].ToString();
         if (string.IsNullOrWhiteSpace(clientId)) clientId = "web";
@@ -102,6 +100,7 @@ public sealed class GenerateTokenCommandHandler
         await _identityService.StoreRefreshTokenAsync(subject, token.RefreshToken, token.RefreshTokenExpiresAt, cancellationToken);
 
         // Create user session for session management (non-blocking, fail gracefully)
+        // SessionService will automatically parse Client Hints from HttpContext via IHttpContextAccessor
         try
         {
             var refreshTokenHash = Sha256Short(token.RefreshToken);
@@ -109,7 +108,7 @@ public sealed class GenerateTokenCommandHandler
                 subject,
                 refreshTokenHash,
                 ip,
-                ua,
+                ua, // Store full User-Agent string for reference
                 token.RefreshTokenExpiresAt,
                 cancellationToken);
         }
@@ -150,6 +149,30 @@ public sealed class GenerateTokenCommandHandler
         await _outboxStore.AddAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
 
         return token;
+    }
+
+    private static string GetUserAgentString(IHeaderDictionary? headers)
+    {
+        if (headers is null)
+        {
+            return "unknown";
+        }
+
+        // Check for forwarded User-Agent first (from Blazor BFF)
+        var forwardedUa = headers["X-Forwarded-User-Agent"].ToString();
+        if (!string.IsNullOrWhiteSpace(forwardedUa))
+        {
+            return forwardedUa;
+        }
+
+        // Try standard User-Agent
+        var ua = headers.UserAgent.ToString();
+        if (!string.IsNullOrWhiteSpace(ua))
+        {
+            return ua;
+        }
+
+        return "unknown";
     }
 
     private static string Sha256Short(string value)

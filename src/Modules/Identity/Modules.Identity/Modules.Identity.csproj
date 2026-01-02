@@ -13,7 +13,6 @@
 	  <PackageReference Include="Mediator.Abstractions" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
 	  <PackageReference Include="Finbuckle.MultiTenant.Identity.EntityFrameworkCore" />
-	  <PackageReference Include="UAParser" />
 	</ItemGroup>
 
 	<ItemGroup>

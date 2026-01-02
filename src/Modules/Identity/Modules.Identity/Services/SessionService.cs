@@ -7,7 +7,7 @@ using FSH.Modules.Identity.Data;
 using FSH.Modules.Identity.Features.v1.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using UAParser;
+using Microsoft.AspNetCore.Http;
 
 namespace FSH.Modules.Identity.Services;
 
@@ -17,19 +17,20 @@ public sealed class SessionService : ISessionService
     private readonly ICurrentUser _currentUser;
     private readonly IMultiTenantContextAccessor<AppTenantInfo> _multiTenantContextAccessor;
     private readonly ILogger<SessionService> _logger;
-    private readonly Parser _uaParser;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public SessionService(
         IdentityDbContext db,
         ICurrentUser currentUser,
         IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
-        ILogger<SessionService> logger)
+        ILogger<SessionService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _db = db;
         _currentUser = currentUser;
         _multiTenantContextAccessor = multiTenantContextAccessor;
         _logger = logger;
-        _uaParser = Parser.GetDefault();
+        _httpContextAccessor = httpContextAccessor;
     }
 
     private void EnsureValidTenant()
@@ -50,7 +51,8 @@ public sealed class SessionService : ISessionService
     {
         EnsureValidTenant();
 
-        var clientInfo = _uaParser.Parse(userAgent);
+        // Parse client information using Client Hints when available from HttpContext
+        var clientInfo = ParseClientInfo();
 
         var session = new UserSession
         {
@@ -58,11 +60,11 @@ public sealed class SessionService : ISessionService
             RefreshTokenHash = refreshTokenHash,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            DeviceType = GetDeviceType(clientInfo.Device.Family),
-            Browser = clientInfo.UA.Family,
-            BrowserVersion = clientInfo.UA.Major,
-            OperatingSystem = clientInfo.OS.Family,
-            OsVersion = clientInfo.OS.Major,
+            DeviceType = clientInfo.DeviceType ?? "Desktop",
+            Browser = clientInfo.Browser,
+            BrowserVersion = clientInfo.BrowserVersion,
+            OperatingSystem = clientInfo.OperatingSystem,
+            OsVersion = clientInfo.OsVersion,
             ExpiresAt = expiresAt,
             CreatedAt = DateTime.UtcNow,
             LastActivityAt = DateTime.UtcNow
@@ -71,7 +73,8 @@ public sealed class SessionService : ISessionService
         _db.UserSessions.Add(session);
         await _db.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Created session {SessionId} for user {UserId}", session.Id, userId);
+        _logger.LogInformation("Created session {SessionId} for user {UserId} using {DetectionMethod}",
+            session.Id, userId, clientInfo.Browser != "Unknown" ? "Client Hints/User-Agent" : "fallback");
 
         return MapToDto(session, isCurrentSession: true);
     }
@@ -372,25 +375,38 @@ public sealed class SessionService : ISessionService
         }
     }
 
-    private static string GetDeviceType(string deviceFamily)
+    private ClientInfo ParseClientInfo()
     {
-        if (string.IsNullOrWhiteSpace(deviceFamily) || deviceFamily == "Other")
+        // Try to get headers from current HttpContext (will include forwarded Client Hints from BFF)
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext?.Request.Headers is not null)
         {
-            return "Desktop";
+            var headers = httpContext.Request.Headers;
+            
+            // Log available Client Hints headers for debugging
+            var hasClientHints = headers.ContainsKey("Sec-CH-UA") || 
+                                headers.ContainsKey("X-Forwarded-Sec-CH-UA");
+            
+            if (hasClientHints)
+            {
+                _logger.LogDebug("Client Hints detected: Sec-CH-UA={SecChUa}, Sec-CH-UA-Platform={Platform}, Sec-CH-UA-Mobile={Mobile}",
+                    headers["Sec-CH-UA"].ToString() ?? headers["X-Forwarded-Sec-CH-UA"].ToString(),
+                    headers["Sec-CH-UA-Platform"].ToString() ?? headers["X-Forwarded-Sec-CH-UA-Platform"].ToString(),
+                    headers["Sec-CH-UA-Mobile"].ToString() ?? headers["X-Forwarded-Sec-CH-UA-Mobile"].ToString());
+            }
+            else
+            {
+                _logger.LogDebug("No Client Hints detected, using User-Agent fallback: {UserAgent}",
+                    headers["User-Agent"].ToString() ?? headers["X-Forwarded-User-Agent"].ToString());
+            }
+            
+            return ClientHintsParser.Parse(headers);
         }
 
-        var lower = deviceFamily.ToLowerInvariant();
-        if (lower.Contains("mobile") || lower.Contains("phone") || lower.Contains("iphone") || lower.Contains("android"))
-        {
-            return "Mobile";
-        }
-
-        if (lower.Contains("tablet") || lower.Contains("ipad"))
-        {
-            return "Tablet";
-        }
-
-        return "Desktop";
+        // Fallback: create minimal headers
+        _logger.LogWarning("HttpContext not available for Client Hints parsing, using empty headers");
+        var emptyHeaders = new HeaderDictionary();
+        return ClientHintsParser.Parse(emptyHeaders);
     }
 
     private static UserSessionDto MapToDto(UserSession session, bool isCurrentSession)

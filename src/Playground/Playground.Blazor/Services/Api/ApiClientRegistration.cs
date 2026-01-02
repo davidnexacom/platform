@@ -11,18 +11,24 @@ internal static class ApiClientRegistration
         var apiBaseUrl = configuration["Api:BaseUrl"]
             ?? throw new InvalidOperationException("Api:BaseUrl configuration is missing.");
 
-        static HttpClient ResolveClient(IServiceProvider sp) =>
-            sp.GetRequiredService<HttpClient>();
-
-        // Register ForwardedHeadersHandler
+        // Register handlers
         services.AddTransient<ForwardedHeadersHandler>();
+        services.AddTransient<AuthorizationHeaderHandler>();
 
-        // Register a named HttpClient for token operations with ForwardedHeadersHandler
+        // Register a named HttpClient for token operations (no auth header to avoid circular dependency)
         services.AddHttpClient("TokenClient", client =>
         {
             client.BaseAddress = new Uri(apiBaseUrl);
         })
         .AddHttpMessageHandler<ForwardedHeadersHandler>();
+
+        // Register the main authenticated HttpClient with both handlers
+        services.AddHttpClient("ApiClient", client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+        })
+        .AddHttpMessageHandler<ForwardedHeadersHandler>()  // First: forward browser headers
+        .AddHttpMessageHandler<AuthorizationHeaderHandler>(); // Second: add auth token
 
         // TokenClient uses the named HttpClient without the AuthorizationHeaderHandler
         // This avoids circular dependency: TokenRefreshService -> ITokenClient -> HttpClient -> AuthorizationHeaderHandler -> TokenRefreshService
@@ -33,26 +39,55 @@ internal static class ApiClientRegistration
             return new TokenClient(client);
         });
 
+        // All other clients use the authenticated HttpClient with ForwardedHeadersHandler
         services.AddTransient<IIdentityClient>(sp =>
-            new IdentityClient(ResolveClient(sp)));
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            return new IdentityClient(client);
+        });
 
         services.AddTransient<IAuditsClient>(sp =>
-            new AuditsClient(ResolveClient(sp)));
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            return new AuditsClient(client);
+        });
 
         services.AddTransient<ITenantsClient>(sp =>
-            new TenantsClient(ResolveClient(sp)));
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            return new TenantsClient(client);
+        });
 
         services.AddTransient<IUsersClient>(sp =>
-            new UsersClient(ResolveClient(sp)));
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            return new UsersClient(client);
+        });
 
         services.AddTransient<ISessionsClient>(sp =>
-            new SessionsClient(ResolveClient(sp)));
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            return new SessionsClient(client);
+        });
 
         services.AddTransient<IV1Client>(sp =>
-            new V1Client(ResolveClient(sp)));
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            return new V1Client(client);
+        });
 
         services.AddTransient<IHealthClient>(sp =>
-            new HealthClient(ResolveClient(sp)));
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            return new HealthClient(client);
+        });
 
         return services;
     }
