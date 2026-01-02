@@ -326,6 +326,36 @@ public sealed class SessionService : ISessionService
         return session?.Id;
     }
 
+    public async Task<Guid?> GetMostRecentSessionIdAsync(
+        string userId,
+        string? ipAddress = null,
+        string? userAgent = null,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureValidTenant();
+
+        var query = _db.UserSessions
+            .AsNoTracking()
+            .Where(s => s.UserId == userId && !s.IsRevoked && s.ExpiresAt > DateTime.UtcNow);
+
+        // Filter by IP and UserAgent if provided (for more precise matching)
+        if (!string.IsNullOrEmpty(ipAddress))
+        {
+            query = query.Where(s => s.IpAddress == ipAddress);
+        }
+
+        if (!string.IsNullOrEmpty(userAgent))
+        {
+            query = query.Where(s => s.UserAgent == userAgent);
+        }
+
+        var session = await query
+            .OrderByDescending(s => s.LastActivityAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return session?.Id;
+    }
+
     public async Task CleanupExpiredSessionsAsync(
         CancellationToken cancellationToken = default)
     {

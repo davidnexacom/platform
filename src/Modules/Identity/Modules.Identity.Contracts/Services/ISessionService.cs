@@ -67,6 +67,12 @@ public interface ISessionService
         string refreshTokenHash,
         CancellationToken cancellationToken = default);
 
+    Task<Guid?> GetMostRecentSessionIdAsync(
+        string userId,
+        string? ipAddress = null,
+        string? userAgent = null,
+        CancellationToken cancellationToken = default);
+
     Task CleanupExpiredSessionsAsync(
         CancellationToken cancellationToken = default);
 }
