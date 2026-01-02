@@ -30,6 +30,7 @@ internal static class SimpleBffAuth
                 logger.LogInformation("Login attempt for {Email}", email);
 
                 // Call the identity API to get token
+                // The ForwardedHeadersHandler will automatically add User-Agent and IP headers
                 var token = await tokenClient.IssueAsync(
                     tenant ?? "root",
                     new GenerateTokenCommand

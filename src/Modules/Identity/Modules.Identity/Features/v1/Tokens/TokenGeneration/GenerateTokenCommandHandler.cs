@@ -49,8 +49,20 @@ public sealed class GenerateTokenCommandHandler
 
         // Gather context for auditing
         var http = _http.HttpContext;
-        var ip = http?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var ua = http?.Request.Headers.UserAgent.ToString() ?? "unknown";
+        
+        // Check for forwarded headers first (from Blazor BFF)
+        var ip = http?.Request.Headers["X-Forwarded-For"].ToString();
+        if (string.IsNullOrWhiteSpace(ip))
+        {
+            ip = http?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+        
+        var ua = http?.Request.Headers["X-Forwarded-User-Agent"].ToString();
+        if (string.IsNullOrWhiteSpace(ua))
+        {
+            ua = http?.Request.Headers.UserAgent.ToString() ?? "unknown";
+        }
+        
         var clientId = http?.Request.Headers["X-Client-Id"].ToString();
         if (string.IsNullOrWhiteSpace(clientId)) clientId = "web";
 

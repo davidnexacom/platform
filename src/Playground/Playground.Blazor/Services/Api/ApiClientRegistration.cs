@@ -14,11 +14,15 @@ internal static class ApiClientRegistration
         static HttpClient ResolveClient(IServiceProvider sp) =>
             sp.GetRequiredService<HttpClient>();
 
-        // Register a named HttpClient for token operations (no auth handler to avoid circular dependency)
+        // Register ForwardedHeadersHandler
+        services.AddTransient<ForwardedHeadersHandler>();
+
+        // Register a named HttpClient for token operations with ForwardedHeadersHandler
         services.AddHttpClient("TokenClient", client =>
         {
             client.BaseAddress = new Uri(apiBaseUrl);
-        });
+        })
+        .AddHttpMessageHandler<ForwardedHeadersHandler>();
 
         // TokenClient uses the named HttpClient without the AuthorizationHeaderHandler
         // This avoids circular dependency: TokenRefreshService -> ITokenClient -> HttpClient -> AuthorizationHeaderHandler -> TokenRefreshService
