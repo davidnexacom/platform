@@ -27,5 +27,12 @@ public sealed class AuditSummaryDto
     public string? Source { get; set; }
 
     public AuditTag Tags { get; set; }
+
+    // Impersonation fields - populated from optimized columns
+    public bool IsImpersonating { get; set; }
+
+    public string? RealUserId { get; set; }
+
+    public string? RealUserName { get; set; }
 }
 

@@ -20,6 +20,11 @@ public sealed class AuditRecord
 
     public long Tags { get; set; }
 
+    // Impersonation tracking - optimized for queries
+    public bool IsImpersonating { get; set; }
+    public string? RealUserId { get; set; }
+    public string? RealUserName { get; set; }
+
     public string PayloadJson { get; set; } = default!;
 }
 

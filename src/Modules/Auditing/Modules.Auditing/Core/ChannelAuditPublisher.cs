@@ -1,5 +1,6 @@
 using FSH.Modules.Auditing.Contracts;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Channels;
 
 namespace FSH.Modules.Auditing;
@@ -79,6 +80,25 @@ public sealed class ChannelAuditPublisher : IAuditPublisher
                 source: env.Source,
                 tags: env.Tags,
                 payload: env.Payload);
+        }
+
+        // Apply enrichers from the current request scope if available
+        if (_httpContextAccessor.HttpContext?.RequestServices != null)
+        {
+            var enrichers = _httpContextAccessor.HttpContext.RequestServices
+                .GetServices<IAuditEnricher>();
+            
+            foreach (var enricher in enrichers)
+            {
+                try
+                {
+                    enricher.Enrich(env);
+                }
+                catch
+                {
+                    // Swallow enricher errors to not block audit publishing
+                }
+            }
         }
 
         return _channel.Writer.TryWrite(env)

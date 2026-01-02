@@ -107,5 +107,6 @@ public enum AuditTag
     RetainedLong = 1 << 3,
     HealthCheck = 1 << 4,
     Authentication = 1 << 5,
-    Authorization = 1 << 6
+    Authorization = 1 << 6,
+    HttpContext = 1 << 7
 }

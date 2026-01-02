@@ -4,6 +4,7 @@ using FSH.Framework.Shared.Constants;
 using FSH.Framework.Web.Modules;
 using FSH.Modules.Auditing.Authorization;
 using FSH.Modules.Auditing.Contracts;
+using FSH.Modules.Auditing.Enrichers;
 using FSH.Modules.Auditing.Features.v1.GetAuditById;
 using FSH.Modules.Auditing.Features.v1.GetAudits;
 using FSH.Modules.Auditing.Features.v1.GetAuditsByCorrelation;
@@ -46,6 +47,8 @@ public class AuditingModule : IModule
 
         // Enrichers used by Audit.Configure (scoped, run on request thread)
         builder.Services.AddScoped<IAuditMaskingService, JsonMaskingService>();
+        builder.Services.AddScoped<IAuditEnricher, HttpContextAuditEnricher>();
+        builder.Services.AddScoped<IAuditEnricher, CurrentUserAuditEnricher>();
         builder.Services.AddHostedService<AuditingConfigurator>();
         builder.Services.AddScoped<IAuditScope, HttpAuditScope>();
 

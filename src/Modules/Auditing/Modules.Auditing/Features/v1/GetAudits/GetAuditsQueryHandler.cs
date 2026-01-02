@@ -78,10 +78,20 @@ public sealed class GetAuditsQueryHandler : IQueryHandler<GetAuditsQuery, PagedR
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             string term = query.Search;
-            audits = audits.Where(a =>
-                (a.PayloadJson != null && EF.Functions.ILike(a.PayloadJson, $"%{term}%")) ||
-                (a.Source != null && EF.Functions.ILike(a.Source, $"%{term}%")) ||
-                (a.UserName != null && EF.Functions.ILike(a.UserName, $"%{term}%")));
+
+            // Optimized: Special handling for impersonation filter using indexed column
+            if (term.Equals("isImpersonating", StringComparison.OrdinalIgnoreCase))
+            {
+                audits = audits.Where(a => a.IsImpersonating);
+            }
+            else
+            {
+                // General search in indexed fields (no JSONB search for performance)
+                audits = audits.Where(a =>
+                    (a.Source != null && EF.Functions.ILike(a.Source, $"%{term}%")) ||
+                    (a.UserName != null && EF.Functions.ILike(a.UserName, $"%{term}%")) ||
+                    (a.RealUserName != null && EF.Functions.ILike(a.RealUserName, $"%{term}%")));
+            }
         }
 
         audits = audits.OrderByDescending(a => a.OccurredAtUtc);
@@ -99,7 +109,11 @@ public sealed class GetAuditsQueryHandler : IQueryHandler<GetAuditsQuery, PagedR
             CorrelationId = a.CorrelationId,
             RequestId = a.RequestId,
             Source = a.Source,
-            Tags = (AuditTag)a.Tags
+            Tags = (AuditTag)a.Tags,
+            // Impersonation fields for UI display
+            IsImpersonating = a.IsImpersonating,
+            RealUserId = a.RealUserId,
+            RealUserName = a.RealUserName
         });
 
         return await projected.ToPagedResponseAsync(query, cancellationToken).ConfigureAwait(false);

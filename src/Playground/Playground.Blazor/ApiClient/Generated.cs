@@ -7303,6 +7303,15 @@ namespace FSH.Playground.Blazor.ApiClient
         [System.Text.Json.Serialization.JsonPropertyName("tags")]
         public int Tags { get; set; }
 
+        [System.Text.Json.Serialization.JsonPropertyName("isImpersonating")]
+        public bool IsImpersonating { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("realUserId")]
+        public string RealUserId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("realUserName")]
+        public string RealUserName { get; set; }
+
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

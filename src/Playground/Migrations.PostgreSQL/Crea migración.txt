@@ -1,0 +1,5 @@
+﻿dotnet ef migrations add AddImpersonationColumnsToAudits `
+  --project . `
+  --startup-project ..\Playground.Api\Playground.Api.csproj `
+  --context AuditDbContext `
+  --output-dir Audit

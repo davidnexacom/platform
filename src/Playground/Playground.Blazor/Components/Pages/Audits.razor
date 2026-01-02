@@ -127,6 +127,11 @@
                  Color="@(_quickFilter == "exceptions" ? Color.Error : Color.Default)"
                  Variant="@(_quickFilter == "exceptions" ? Variant.Filled : Variant.Outlined)"
                  OnClick="ApplyExceptionsFilter">Exceptions</MudChip>
+        <MudChip T="string"
+                 Icon="@Icons.Material.Filled.SwapHoriz"
+                 Color="@(_quickFilter == "impersonation" ? Color.Warning : Color.Default)"
+                 Variant="@(_quickFilter == "impersonation" ? Variant.Filled : Variant.Outlined)"
+                 OnClick="ApplyImpersonationFilter">Impersonations</MudChip>
         <MudDivider Vertical="true" FlexItem="true" />
         <MudChip T="string"
                  Icon="@Icons.Material.Filled.Clear"
@@ -328,7 +333,17 @@
             </MudTd>
             <MudTd DataLabel="User">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.body2">@(string.IsNullOrEmpty(context.UserName) ? "System" : context.UserName)</MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudText Typo="Typo.body2">@(string.IsNullOrEmpty(context.UserName) ? "System" : context.UserName)</MudText>
+                        @if (HasImpersonationInSummary(context))
+                        {
+                            <MudTooltip Text="Impersonation detected - click Details for more info">
+                                <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" 
+                                         Size="Size.Small" 
+                                         Color="Color.Warning" />
+                            </MudTooltip>
+                        }
+                    </MudStack>
                     @if (!string.IsNullOrEmpty(context.UserId) && context.UserId != context.UserName)
                     {
                         <MudText Typo="Typo.caption" Class="text-muted">@context.UserId</MudText>
@@ -436,6 +451,27 @@
                                                 </MudCardHeader>
                                                 <MudCardContent>
                                                     <MudStack Spacing="2">
+                                                        @{
+                                                            var impersonationInfo = GetImpersonationInfo(detail);
+                                                            var httpContext = GetHttpContext(detail);
+                                                        }
+                                                        @if (impersonationInfo.IsImpersonating)
+                                                        {
+                                                            <MudAlert Severity="Severity.Warning" Dense="true" Variant="Variant.Outlined">
+                                                                <MudStack Spacing="1">
+                                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                                        <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" />
+                                                                        <MudText Typo="Typo.body2" Class="fw-600">Impersonation Active</MudText>
+                                                                    </MudStack>
+                                                                    <MudText Typo="Typo.caption">
+                                                                        <strong>Real User:</strong> @impersonationInfo.RealUserName (@impersonationInfo.RealUserId)
+                                                                    </MudText>
+                                                                    <MudText Typo="Typo.caption">
+                                                                        <strong>Impersonating:</strong> @impersonationInfo.ImpersonatedUserEmail
+                                                                    </MudText>
+                                                                </MudStack>
+                                                            </MudAlert>
+                                                        }
                                                         <MudStack Row="true" Justify="Justify.SpaceBetween">
                                                             <MudText Typo="Typo.body2" Class="text-muted">User:</MudText>
                                                             <MudText Typo="Typo.body2">@(string.IsNullOrEmpty(detail.UserName) ? "System" : detail.UserName)</MudText>
@@ -456,6 +492,55 @@
                                                 </MudCardContent>
                                             </MudCard>
                                         </MudItem>
+                                        @{
+                                            var httpContext = GetHttpContext(detail);
+                                        }
+                                        @if (httpContext.HasHttpContext)
+                                        {
+                                            <MudItem xs="12">
+                                                <MudCard Elevation="0" Outlined="true">
+                                                    <MudCardHeader>
+                                                        <CardHeaderContent>
+                                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                                <MudIcon Icon="@Icons.Material.Filled.Http" Color="Color.Info" />
+                                                                <MudText Typo="Typo.subtitle1" Class="fw-600">HTTP Context</MudText>
+                                                            </MudStack>
+                                                        </CardHeaderContent>
+                                                    </MudCardHeader>
+                                                    <MudCardContent>
+                                                        <MudStack Spacing="2">
+                                                            @if (!string.IsNullOrEmpty(httpContext.Endpoint))
+                                                            {
+                                                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                                    <MudText Typo="Typo.body2" Class="text-muted">Endpoint:</MudText>
+                                                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">
+                                                                        @httpContext.Endpoint
+                                                                    </MudChip>
+                                                                </MudStack>
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(httpContext.IpAddress))
+                                                            {
+                                                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                                    <MudText Typo="Typo.body2" Class="text-muted">IP Address:</MudText>
+                                                                    <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.Computer">
+                                                                        @httpContext.IpAddress
+                                                                    </MudChip>
+                                                                </MudStack>
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(httpContext.UserAgent))
+                                                            {
+                                                                <MudStack Spacing="0">
+                                                                    <MudText Typo="Typo.body2" Class="text-muted">User Agent:</MudText>
+                                                                    <MudText Typo="Typo.caption" Class="mt-1" Style="word-break: break-word;">
+                                                                        @httpContext.UserAgent
+                                                                    </MudText>
+                                                                </MudStack>
+                                                            }
+                                                        </MudStack>
+                                                    </MudCardContent>
+                                                </MudCard>
+                                            </MudItem>
+                                        }
                                     </MudGrid>
                                 </MudTabPanel>
 
@@ -833,6 +918,13 @@
         _table?.ReloadServerData();
     }
 
+    private void ApplyImpersonationFilter()
+    {
+        _filter.Search = "isImpersonating";
+        _quickFilter = "impersonation";
+        _table?.ReloadServerData();
+    }
+
     private async Task ToggleDetail(FSH.Playground.Blazor.ApiClient.AuditSummaryDto audit)
     {
         if (_expanded.Contains(audit.Id))
@@ -1143,6 +1235,103 @@
 
     private int GetSourcesCount() =>
         _summary?.EventsBySource?.Count ?? 0;
+
+    private (bool IsImpersonating, string? RealUserId, string? RealUserName, string? ImpersonatedUserEmail) GetImpersonationInfo(FSH.Playground.Blazor.ApiClient.AuditDetailDto detail)
+    {
+        try
+        {
+            var payloadJson = JsonSerializer.Serialize(detail.Payload);
+            using var doc = JsonDocument.Parse(payloadJson);
+            
+            if (doc.RootElement.TryGetProperty("claimsSnapshot", out var claimsSnapshot) ||
+                doc.RootElement.TryGetProperty("ClaimsSnapshot", out claimsSnapshot))
+            {
+                var isImpersonating = claimsSnapshot.TryGetProperty("isImpersonating", out var impersonatingProp) && 
+                                     impersonatingProp.GetBoolean();
+                
+                if (isImpersonating)
+                {
+                    var realUserId = claimsSnapshot.TryGetProperty("realUserId", out var userIdProp) 
+                        ? userIdProp.GetString() 
+                        : null;
+                    var realUserName = claimsSnapshot.TryGetProperty("realUserName", out var userNameProp) 
+                        ? userNameProp.GetString() 
+                        : null;
+                    var impersonatedEmail = claimsSnapshot.TryGetProperty("impersonatedUserEmail", out var emailProp) 
+                        ? emailProp.GetString() 
+                        : null;
+                    
+                    return (true, realUserId, realUserName, impersonatedEmail);
+                }
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+        
+        return (false, null, null, null);
+    }
+
+    private (bool HasHttpContext, string? Endpoint, string? IpAddress, string? UserAgent) GetHttpContext(FSH.Playground.Blazor.ApiClient.AuditDetailDto detail)
+    {
+        try
+        {
+            var payloadJson = JsonSerializer.Serialize(detail.Payload);
+            using var doc = JsonDocument.Parse(payloadJson);
+            
+            // Try to get from claimsSnapshot (Security events)
+            if (doc.RootElement.TryGetProperty("claimsSnapshot", out var claimsSnapshot) ||
+                doc.RootElement.TryGetProperty("ClaimsSnapshot", out claimsSnapshot))
+            {
+                var endpoint = claimsSnapshot.TryGetProperty("endpoint", out var endpointProp) 
+                    ? endpointProp.GetString() 
+                    : null;
+                var ip = claimsSnapshot.TryGetProperty("ip", out var ipProp) 
+                    ? ipProp.GetString() 
+                    : null;
+                var userAgent = claimsSnapshot.TryGetProperty("userAgent", out var uaProp) 
+                    ? uaProp.GetString() 
+                    : null;
+                
+                if (!string.IsNullOrEmpty(endpoint) || !string.IsNullOrEmpty(ip) || !string.IsNullOrEmpty(userAgent))
+                {
+                    return (true, endpoint, ip, userAgent);
+                }
+            }
+            
+            // Try to get from requestPreview (Activity events)
+            if (doc.RootElement.TryGetProperty("requestPreview", out var requestPreview) ||
+                doc.RootElement.TryGetProperty("RequestPreview", out requestPreview))
+            {
+                var endpoint = requestPreview.TryGetProperty("endpoint", out var endpointProp) 
+                    ? endpointProp.GetString() 
+                    : null;
+                var ip = requestPreview.TryGetProperty("ipAddress", out var ipProp) 
+                    ? ipProp.GetString() 
+                    : null;
+                var userAgent = requestPreview.TryGetProperty("userAgent", out var uaProp) 
+                    ? uaProp.GetString() 
+                    : null;
+                
+                if (!string.IsNullOrEmpty(endpoint) || !string.IsNullOrEmpty(ip) || !string.IsNullOrEmpty(userAgent))
+                {
+                    return (true, endpoint, ip, userAgent);
+                }
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+        
+        return (false, null, null, null);
+    }
+
+    private bool HasImpersonationInSummary(FSH.Playground.Blazor.ApiClient.AuditSummaryDto summary)
+    {
+        return summary.IsImpersonating;
+    }
 
     private sealed class FilterDto
     {

@@ -61,6 +61,10 @@ public sealed class SqlAuditSink : IAuditSink
                 RequestId = e.RequestId,
                 Source = e.Source,
                 Tags = (long)e.Tags,
+                // Extract impersonation info from payload for optimized queries
+                IsImpersonating = ExtractIsImpersonating(e.Payload),
+                RealUserId = ExtractRealUserId(e.Payload),
+                RealUserName = ExtractRealUserName(e.Payload),
                 PayloadJson = _serializer.SerializePayload(e.Payload)
             }).ToList();
 
@@ -69,5 +73,62 @@ public sealed class SqlAuditSink : IAuditSink
 
             _log.LogInformation("Wrote {Count} audit records for tenant {TenantId}.", records.Count, tenantInfo.Id);
         }
+    }
+
+    private static bool ExtractIsImpersonating(object payload)
+    {
+        if (payload is SecurityEventPayload securityPayload &&
+            securityPayload.ClaimsSnapshot != null &&
+            securityPayload.ClaimsSnapshot.TryGetValue("isImpersonating", out var value))
+        {
+            return value is true or "true";
+        }
+
+        if (payload is ActivityEventPayload activityPayload &&
+            activityPayload.RequestPreview is Dictionary<string, object?> requestDict &&
+            requestDict.TryGetValue("isImpersonating", out var activityValue))
+        {
+            return activityValue is true or "true";
+        }
+
+        return false;
+    }
+
+    private static string? ExtractRealUserId(object payload)
+    {
+        if (payload is SecurityEventPayload securityPayload &&
+            securityPayload.ClaimsSnapshot != null &&
+            securityPayload.ClaimsSnapshot.TryGetValue("realUserId", out var value))
+        {
+            return value?.ToString();
+        }
+
+        if (payload is ActivityEventPayload activityPayload &&
+            activityPayload.RequestPreview is Dictionary<string, object?> requestDict &&
+            requestDict.TryGetValue("realUserId", out var activityValue))
+        {
+            return activityValue?.ToString();
+        }
+
+        return null;
+    }
+
+    private static string? ExtractRealUserName(object payload)
+    {
+        if (payload is SecurityEventPayload securityPayload &&
+            securityPayload.ClaimsSnapshot != null &&
+            securityPayload.ClaimsSnapshot.TryGetValue("realUserName", out var value))
+        {
+            return value?.ToString();
+        }
+
+        if (payload is ActivityEventPayload activityPayload &&
+            activityPayload.RequestPreview is Dictionary<string, object?> requestDict &&
+            requestDict.TryGetValue("realUserName", out var activityValue))
+        {
+            return activityValue?.ToString();
+        }
+
+        return null;
     }
 }
