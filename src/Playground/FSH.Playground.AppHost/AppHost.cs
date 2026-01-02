@@ -15,9 +15,18 @@ var redis = builder
     .WithContainerName("redis-fsh-playground")
     .WithDataVolume("fsh-redis-data");
 
+// RabbitMQ container with management plugin
+var rabbitmq = builder
+    .AddRabbitMQ("rabbitmq")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithContainerName("rabbitmq-fsh-playground")
+    .WithDataVolume("fsh-rabbitmq-data")
+    .WithManagementPlugin();
+
 builder.AddProject<Projects.Playground_Api>("playground-api")
     .WithReference(postgres)
     .WithReference(redis)
+    .WithReference(rabbitmq)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
     .WithEnvironment("OpenTelemetryOptions__Exporter__Otlp__Endpoint", "https://localhost:4317")
     .WithEnvironment("OpenTelemetryOptions__Exporter__Otlp__Protocol", "grpc")
@@ -25,7 +34,8 @@ builder.AddProject<Projects.Playground_Api>("playground-api")
     .WithEnvironment("DatabaseOptions__Provider", "POSTGRESQL")
     .WithEnvironment("DatabaseOptions__MigrationsAssembly", "FSH.Playground.Migrations.PostgreSQL")
     .WaitFor(postgres)
-    .WaitFor(redis);
+    .WaitFor(redis)
+    .WaitFor(rabbitmq);
 
 builder.AddProject<Projects.Playground_Blazor>("playground-blazor");
 
