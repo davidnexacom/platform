@@ -15,9 +15,12 @@ var redis = builder
     .WithContainerName("redis-fsh-playground")
     .WithDataVolume("fsh-redis-data");
 
-// RabbitMQ container with management plugin
+// RabbitMQ container with management plugin and custom credentials
+var rabbitmqUsername = builder.AddParameter("rabbitmq-username", secret: false);
+var rabbitmqPassword = builder.AddParameter("rabbitmq-password", secret: true);
+
 var rabbitmq = builder
-    .AddRabbitMQ("rabbitmq")
+    .AddRabbitMQ("rabbitmq", userName: rabbitmqUsername, password: rabbitmqPassword)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithContainerName("rabbitmq-fsh-playground")
     .WithDataVolume("fsh-rabbitmq-data")

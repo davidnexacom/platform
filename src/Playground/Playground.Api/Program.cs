@@ -4,6 +4,7 @@ using FSH.Modules.Auditing;
 using FSH.Modules.Identity;
 using FSH.Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
 using FSH.Modules.Identity.Features.v1.Tokens.TokenGeneration;
+using FSH.Modules.Messaging;
 using FSH.Modules.Multitenancy;
 using FSH.Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using FSH.Modules.Multitenancy.Features.v1.GetTenantStatus;
@@ -12,10 +13,11 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 // Map Aspire connection strings to application configuration keys
-// Aspire injects: ConnectionStrings__fsh and ConnectionStrings__redis
-// Application expects: DatabaseOptions__ConnectionString and CachingOptions__Redis
+// Aspire injects: ConnectionStrings__fsh, ConnectionStrings__redis, and ConnectionStrings__rabbitmq
+// Application expects: DatabaseOptions__ConnectionString, CachingOptions__Redis, and RabbitMqOptions__ConnectionString
 var postgresConnectionString = builder.Configuration.GetConnectionString("fsh");
 var redisConnectionString = builder.Configuration.GetConnectionString("redis");
+var rabbitmqConnectionString = builder.Configuration.GetConnectionString("rabbitmq");
 
 if (!string.IsNullOrEmpty(postgresConnectionString))
 {
@@ -25,6 +27,11 @@ if (!string.IsNullOrEmpty(postgresConnectionString))
 if (!string.IsNullOrEmpty(redisConnectionString))
 {
     builder.Configuration["CachingOptions:Redis"] = redisConnectionString;
+}
+
+if (!string.IsNullOrEmpty(rabbitmqConnectionString))
+{
+    builder.Configuration["RabbitMqOptions:ConnectionString"] = rabbitmqConnectionString;
 }
 
 if (builder.Environment.IsProduction())
@@ -59,7 +66,8 @@ var moduleAssemblies = new Assembly[]
 {
     typeof(IdentityModule).Assembly,
     typeof(MultitenancyModule).Assembly,
-    typeof(AuditingModule).Assembly
+    typeof(AuditingModule).Assembly,
+    typeof(MessagingModule).Assembly
 };
 
 builder.AddHeroPlatform(o =>
