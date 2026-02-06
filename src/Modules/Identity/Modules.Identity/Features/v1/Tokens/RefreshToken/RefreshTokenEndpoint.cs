@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
-namespace FSH.Framework.Identity.v1.Tokens.RefreshToken;
+namespace FSH.Modules.Identity.Features.v1.Tokens.RefreshToken;
 
 public static class RefreshTokenEndpoint
 {

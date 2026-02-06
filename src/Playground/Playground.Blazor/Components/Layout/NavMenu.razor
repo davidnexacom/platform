@@ -12,7 +12,29 @@
 
 <nav class="fsh-nav">
     <MudNavMenu Class="pa-2" Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+<<<<<<< HEAD
         @foreach (var navSection in _visibleSections)
+=======
+        <!-- Home - Root Item -->
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Home">
+            Home
+        </MudNavLink>
+
+        <!-- Administration Section -->
+        <div class="fsh-nav-section-title">Administration</div>
+
+        <MudNavLink Href="/users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Person">
+            Users
+        </MudNavLink>
+        <MudNavLink Href="/roles" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.AdminPanelSettings">
+            Roles
+        </MudNavLink>
+        <MudNavLink Href="/groups" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Groups">
+            Groups
+        </MudNavLink>
+
+        @if (_isRootTenantAdmin)
+>>>>>>> develop
         {
             if (navSection.Id == NavigationSections.Home)
             {

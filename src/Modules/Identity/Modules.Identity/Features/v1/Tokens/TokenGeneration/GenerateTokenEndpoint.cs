@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using System.ComponentModel;
 
-namespace FSH.Framework.Identity.v1.Tokens.TokenGeneration;
+namespace FSH.Modules.Identity.Features.v1.Tokens.TokenGeneration;
 
 public static class GenerateTokenEndpoint
 {

@@ -4,7 +4,7 @@ using FSH.Modules.Identity.Contracts.v1.Users.UpdateUser;
 
 namespace FSH.Modules.Identity.Features.v1.Users.UpdateUser;
 
-public class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
+public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
 {
     public UpdateUserCommandValidator()
     {

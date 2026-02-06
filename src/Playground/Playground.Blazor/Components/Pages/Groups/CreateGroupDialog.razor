@@ -1,0 +1,282 @@
+@using FSH.Playground.Blazor.ApiClient
+@inject IIdentityClient IdentityClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h6" Class="fw-600">@(IsEditMode ? "Edit Group" : "Create New Group")</MudText>
+            <MudText Typo="Typo.caption" Class="text-muted">
+                @(IsEditMode ? "Modify group details and role assignments" : "Define a new group for organizing users")
+            </MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="4" Class="mt-2">
+                @* Group Name *@
+                <MudTextField @bind-Value="_name"
+                              Label="Group Name"
+                              Placeholder="Enter group name (e.g., Marketing, Engineering)"
+                              Required="true"
+                              RequiredError="Group name is required"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Groups"
+                              Immediate="true"
+                              HelperText="Choose a descriptive name for the group" />
+
+                @* Group Description *@
+                <MudTextField @bind-Value="_description"
+                              Label="Description"
+                              Placeholder="Describe the purpose of this group"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Description"
+                              Lines="3"
+                              HelperText="Help others understand what this group is for" />
+
+                @* Is Default Group *@
+                <MudSwitch @bind-Value="_isDefault"
+                           Label="Default Group"
+                           Color="Color.Primary"
+                           Class="mt-2" />
+                <MudText Typo="Typo.caption" Class="text-muted ml-12" Style="margin-top: -12px;">
+                    New users will be automatically added to default groups
+                </MudText>
+
+                @* Role Assignments *@
+                <MudText Typo="Typo.subtitle2" Class="fw-600 mt-4">Role Assignments</MudText>
+                <MudText Typo="Typo.caption" Class="text-muted">
+                    Members of this group will inherit these roles
+                </MudText>
+
+                @if (_loadingRoles)
+                {
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                }
+                else if (_availableRoles.Any())
+                {
+                    <MudPaper Class="pa-3" Variant="Variant.Outlined">
+                        <MudStack Spacing="2">
+                            @foreach (var role in _availableRoles)
+                            {
+                                <MudCheckBox T="bool"
+                                             Value="@(_selectedRoleIds.Contains(role.Id!))"
+                                             ValueChanged="@((bool val) => ToggleRole(role.Id!, val))"
+                                             Color="Color.Primary"
+                                             Dense="true">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@GetRoleColor(role.Name)">
+                                            @role.Name
+                                        </MudChip>
+                                        @if (!string.IsNullOrEmpty(role.Description))
+                                        {
+                                            <MudText Typo="Typo.caption" Class="text-muted">@role.Description</MudText>
+                                        }
+                                    </MudStack>
+                                </MudCheckBox>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                        No roles available for assignment.
+                    </MudAlert>
+                }
+
+                @* Info Alert *@
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mt-2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">
+                            @if (IsEditMode)
+                            {
+                                <span>After saving, you can manage group members from the group details page.</span>
+                            }
+                            else
+                            {
+                                <span>After creating the group, you can add members from the group details page.</span>
+                            }
+                        </MudText>
+                    </MudStack>
+                </MudAlert>
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   OnClick="Cancel"
+                   Disabled="_busy">
+            Cancel
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="Submit"
+                   Disabled="_busy"
+                   StartIcon="@GetSubmitIcon()">
+            @if (_busy)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>@(IsEditMode ? "Saving..." : "Creating...")</span>
+            }
+            else
+            {
+                <span>@(IsEditMode ? "Save Changes" : "Create Group")</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public GroupDto? ExistingGroup { get; set; }
+
+    private MudForm? _form;
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private bool _isDefault;
+    private HashSet<string> _selectedRoleIds = new();
+    private List<RoleDto> _availableRoles = new();
+    private bool _loadingRoles = true;
+    private bool _busy;
+
+    private bool IsEditMode => ExistingGroup is not null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+
+        if (ExistingGroup is not null)
+        {
+            _name = ExistingGroup.Name ?? string.Empty;
+            _description = ExistingGroup.Description ?? string.Empty;
+            _isDefault = ExistingGroup.IsDefault;
+
+            // Get role IDs from role names
+            if (ExistingGroup.RoleNames?.Any() == true)
+            {
+                foreach (var roleName in ExistingGroup.RoleNames)
+                {
+                    var role = _availableRoles.FirstOrDefault(r =>
+                        string.Equals(r.Name, roleName, StringComparison.OrdinalIgnoreCase));
+                    if (role?.Id is not null)
+                    {
+                        _selectedRoleIds.Add(role.Id);
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task LoadRoles()
+    {
+        _loadingRoles = true;
+        try
+        {
+            var roles = await IdentityClient.RolesGetAsync();
+            _availableRoles = roles?.ToList() ?? new List<RoleDto>();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load roles: {ex.Message}", Severity.Warning);
+        }
+        finally
+        {
+            _loadingRoles = false;
+        }
+    }
+
+    private void ToggleRole(string roleId, bool selected)
+    {
+        if (selected)
+        {
+            _selectedRoleIds.Add(roleId);
+        }
+        else
+        {
+            _selectedRoleIds.Remove(roleId);
+        }
+    }
+
+    private static Color GetRoleColor(string? roleName) => roleName?.ToLowerInvariant() switch
+    {
+        "admin" => Color.Error,
+        "administrator" => Color.Error,
+        "basic" => Color.Info,
+        _ => Color.Default
+    };
+
+    private string? GetSubmitIcon()
+    {
+        if (_busy) return null;
+        return IsEditMode ? Icons.Material.Filled.Save : Icons.Material.Filled.Add;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Submit()
+    {
+        if (_form is not null)
+        {
+            await _form.Validate();
+            if (!_form.IsValid)
+            {
+                return;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            Snackbar.Add("Please enter a group name.", Severity.Warning);
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            if (IsEditMode && ExistingGroup is not null)
+            {
+                var request = new UpdateGroupRequest
+                {
+                    Name = _name,
+                    Description = _description,
+                    IsDefault = _isDefault,
+                    RoleIds = _selectedRoleIds.ToList()
+                };
+                await IdentityClient.GroupsPutAsync(ExistingGroup.Id, request);
+            }
+            else
+            {
+                var command = new CreateGroupCommand
+                {
+                    Name = _name,
+                    Description = _description,
+                    IsDefault = _isDefault,
+                    RoleIds = _selectedRoleIds.ToList()
+                };
+                await IdentityClient.GroupsPostAsync(command);
+            }
+
+            Snackbar.Add($"Group '{_name}' {(IsEditMode ? "updated" : "created")} successfully!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to {(IsEditMode ? "update" : "create")} group: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

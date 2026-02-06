@@ -1,4 +1,4 @@
-using FSH.Framework.Storage.DTOs;
+using FSH.Framework.Shared.Storage;
 
 namespace FSH.Modules.Multitenancy.Contracts.Dtos;
 

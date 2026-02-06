@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
-namespace FSH.Framework.Infrastructure.Identity.Users.Endpoints;
+namespace FSH.Modules.Identity.Features.v1.Users.SelfRegistration;
 
 public static class SelfRegisterUserEndpoint
 {

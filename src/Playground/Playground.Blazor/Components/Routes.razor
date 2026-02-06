@@ -1,8 +1,16 @@
 @using FSH.Playground.Blazor.Components.Layout
+@using Microsoft.AspNetCore.Components.Authorization
 
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(PlaygroundLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(PlaygroundLayout)">
+            <NotAuthorized>
+                <RedirectToLogin />
+            </NotAuthorized>
+            <Authorizing>
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </Authorizing>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
     <NotFound>

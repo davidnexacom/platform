@@ -12,8 +12,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\BuildingBlocks\Eventing\Eventing.csproj" />
-	  <ProjectReference Include="..\..\..\BuildingBlocks\Storage\Storage.csproj" />
+	  <ProjectReference Include="..\..\..\BuildingBlocks\Eventing.Abstractions\Eventing.Abstractions.csproj" />
+	  <ProjectReference Include="..\..\..\BuildingBlocks\Shared\Shared.csproj" />
 	</ItemGroup>
 
 </Project>

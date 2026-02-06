@@ -3,6 +3,7 @@
     <Project Path="BuildingBlocks/Blazor.UI/Blazor.UI.csproj" Id="b8ed01df-1c7f-4be1-afa4-f41d3ac7208e" />
     <Project Path="BuildingBlocks/Caching/Caching.csproj" />
     <Project Path="BuildingBlocks/Core/Core.csproj" />
+    <Project Path="BuildingBlocks/Eventing.Abstractions/Eventing.Abstractions.csproj" />
     <Project Path="BuildingBlocks/Eventing/Eventing.csproj" />
     <Project Path="BuildingBlocks/Jobs/Jobs.csproj" Id="8ea652eb-ce20-4cb4-a4bd-7902d24208dd" />
     <Project Path="BuildingBlocks/Mailing/Mailing.csproj" />
@@ -38,7 +39,10 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/Architecture.Tests/Architecture.Tests.csproj" />
-    <Project Path="Tests/Multitenacy.Tests/Multitenacy.Tests.csproj" Id="985345a2-edb4-4ef9-9a1b-59b704f523b6" />
+    <Project Path="Tests/Auditing.Tests/Auditing.Tests.csproj" />
+    <Project Path="Tests/Generic.Tests/Generic.Tests.csproj" />
+    <Project Path="Tests/Identity.Tests/Identity.Tests.csproj" />
+    <Project Path="Tests/Multitenancy.Tests/Multitenancy.Tests.csproj" Id="985345a2-edb4-4ef9-9a1b-59b704f523b6" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/CLI/FSH.CLI.csproj" />

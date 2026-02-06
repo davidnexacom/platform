@@ -1,6 +1,7 @@
 @page "/tenants"
 @using FSH.Playground.Blazor.ApiClient
 @using FSH.Framework.Blazor.UI.Components.Dialogs
+@using FSH.Framework.Blazor.UI.Components.Cards
 @using FSH.Framework.Shared.Constants
 @using FSH.Framework.Shared.Multitenancy
 @using Microsoft.AspNetCore.Components.Authorization
@@ -35,60 +36,32 @@ else
     @* Stats Cards *@
     <MudGrid Class="mb-4">
         <MudItem xs="6" sm="3">
-            <MudCard Class="stats-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Primary" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">Total</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@_stats.Total</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Total Tenants</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.Business"
+                         IconColor="Color.Primary"
+                         Value="@_stats.Total.ToString()"
+                         Label="Total Tenants"
+                         Badge="Total" />
         </MudItem>
         <MudItem xs="6" sm="3">
-            <MudCard Class="stats-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Active</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@_stats.Active</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Active Tenants</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.CheckCircle"
+                         IconColor="Color.Success"
+                         Value="@_stats.Active.ToString()"
+                         Label="Active Tenants"
+                         Badge="Active" />
         </MudItem>
         <MudItem xs="6" sm="3">
-            <MudCard Class="stats-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">Inactive</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@_stats.Inactive</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Inactive Tenants</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.Cancel"
+                         IconColor="Color.Error"
+                         Value="@_stats.Inactive.ToString()"
+                         Label="Inactive Tenants"
+                         Badge="Inactive" />
         </MudItem>
         <MudItem xs="6" sm="3">
-            <MudCard Class="stats-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">Expiring</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@_stats.ExpiringSoon</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Expiring in 30 days</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.Warning"
+                         IconColor="Color.Warning"
+                         Value="@_stats.ExpiringSoon.ToString()"
+                         Label="Expiring in 30 days"
+                         Badge="Expiring" />
         </MudItem>
     </MudGrid>
 
@@ -256,16 +229,6 @@ else
 }
 
 <style>
-    .stats-card {
-        border-radius: 12px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .stats-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    }
-
     .tenant-avatar {
         width: 32px;
         height: 32px;

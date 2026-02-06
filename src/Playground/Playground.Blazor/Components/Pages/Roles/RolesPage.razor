@@ -1,7 +1,11 @@
 @page "/roles"
 @using FSH.Playground.Blazor.ApiClient
 @using FSH.Framework.Blazor.UI.Components.Dialogs
+<<<<<<< HEAD
 @using FSH.Playground.Blazor.Components.Shared
+=======
+@using FSH.Framework.Blazor.UI.Components.Cards
+>>>>>>> develop
 @inherits ComponentBase
 @inject IIdentityClient IdentityClient
 @inject NavigationManager Navigation
@@ -223,21 +227,156 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
+<<<<<<< HEAD
         .stats-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
+=======
+@* Stats Cards *@
+<MudGrid Class="mb-4">
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.Security"
+                     IconColor="Color.Primary"
+                     Value="@_stats.Total.ToString()"
+                     Label="Total Roles"
+                     Badge="Total" />
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.AdminPanelSettings"
+                     IconColor="Color.Error"
+                     Value="@_stats.SystemRolesCount.ToString()"
+                     Label="System Roles"
+                     Badge="System" />
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.Badge"
+                     IconColor="Color.Info"
+                     Value="@_stats.CustomRolesCount.ToString()"
+                     Label="Custom Roles"
+                     Badge="Custom" />
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.Lock"
+                     IconColor="Color.Warning"
+                     Value="@_stats.ProtectedRolesCount.ToString()"
+                     Label="Protected Roles"
+                     Badge="Protected" />
+    </MudItem>
+</MudGrid>
+>>>>>>> develop
 
         .roles-datagrid .mud-table-head .mud-table-row .mud-table-cell {
             font-weight: 600;
             background-color: rgba(var(--mud-palette-primary-rgb), 0.04);
         }
 
+<<<<<<< HEAD
         .roles-datagrid .mud-table-row:hover {
             background-color: rgba(var(--mud-palette-primary-rgb), 0.02);
         }
     </style>
 </AuthorizeView>
+=======
+@* Roles Grid *@
+<MudPaper Class="fsh-card pa-0" Style="overflow: hidden;">
+    <MudDataGrid T="RoleDto"
+                 @ref="_dataGrid"
+                 Items="_filtered"
+                 Loading="_loading"
+                 Hover="true"
+                 Dense="true"
+                 Striped="true"
+                 MultiSelection="true"
+                 SelectedItems="_selectedRoles"
+                 SelectedItemsChanged="OnSelectionChanged"
+                 SortMode="SortMode.Single"
+                 Filterable="false"
+                 RowsPerPage="@_pageSize"
+                 Class="roles-datagrid">
+        <Columns>
+            <SelectColumn T="RoleDto" ShowInFooter="false" />
+            <TemplateColumn Title="Role" Sortable="true" SortBy="@(x => x.Name)">
+                <CellTemplate>
+                    <MudStack Spacing="0">
+                        <MudLink Typo="Typo.body1" Class="fw-600" OnClick="@(() => GoToPermissions(context.Item.Id))">
+                            @context.Item.Name
+                        </MudLink>
+                        <MudText Typo="Typo.caption" Class="text-muted">
+                            @(string.IsNullOrEmpty(context.Item.Description) ? "No description" : context.Item.Description)
+                        </MudText>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Type" Sortable="false">
+                <CellTemplate>
+                    @if (IsSystemRole(context.Item.Name))
+                    {
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Outlined">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="mr-1" />
+                            System
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-1" />
+                            Custom
+                        </MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false" HeaderClass="text-right" CellClass="text-right">
+                <CellTemplate>
+                    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="0">
+                        <MudTooltip Text="Manage Permissions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Key"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => GoToPermissions(context.Item.Id))" />
+                        </MudTooltip>
+                        <MudTooltip Text="@(IsProtectedRole(context.Item.Name) ? "Protected roles cannot be edited" : "Edit Role")">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           Color="Color.Info"
+                                           OnClick="@(() => EditRole(context.Item))"
+                                           Disabled="@IsProtectedRole(context.Item.Name)" />
+                        </MudTooltip>
+                        <MudTooltip Text="@(IsProtectedRole(context.Item.Name) ? "Protected roles cannot be deleted" : "Delete Role")">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeleteRole(context.Item))"
+                                           Disabled="@(IsProtectedRole(context.Item.Name) || _busyRoleId == context.Item.Id)" />
+                        </MudTooltip>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="RoleDto" PageSizeOptions="@_pageSizeOptions" />
+        </PagerContent>
+        <NoRecordsContent>
+            <MudStack AlignItems="AlignItems.Center" Spacing="4" Class="pa-8">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Large" Color="Color.Default" />
+                <MudText Typo="Typo.h6">No roles found</MudText>
+                <MudText Typo="Typo.body2" Class="text-muted">Try adjusting your filters or create a new role.</MudText>
+            </MudStack>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+<style>
+    .roles-datagrid .mud-table-head .mud-table-row .mud-table-cell {
+        font-weight: 600;
+        background-color: rgba(var(--mud-palette-primary-rgb), 0.04);
+    }
+
+    .roles-datagrid .mud-table-row:hover {
+        background-color: rgba(var(--mud-palette-primary-rgb), 0.02);
+    }
+</style>
+>>>>>>> develop
 
 @code {
     private MudDataGrid<RoleDto>? _dataGrid;

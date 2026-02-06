@@ -5,11 +5,7 @@ using FSH.Framework.Eventing.Outbox;
 using FSH.Framework.Persistence;
 using FSH.Framework.Shared.Multitenancy;
 using FSH.Framework.Shared.Persistence;
-using FSH.Modules.Identity.Features.v1.RoleClaims;
-using FSH.Modules.Identity.Features.v1.Roles;
-using FSH.Modules.Identity.Features.v1.Users;
-using FSH.Modules.Identity.Features.v1.Users.PasswordHistory;
-using FSH.Modules.Identity.Features.v1.Sessions;
+using FSH.Modules.Identity.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -37,6 +33,12 @@ public class IdentityDbContext : MultiTenantIdentityDbContext<FshUser,
     public DbSet<PasswordHistory> PasswordHistories => Set<PasswordHistory>();
 
     public DbSet<UserSession> UserSessions => Set<UserSession>();
+
+    public DbSet<Group> Groups => Set<Group>();
+
+    public DbSet<GroupRole> GroupRoles => Set<GroupRole>();
+
+    public DbSet<UserGroup> UserGroups => Set<UserGroup>();
 
     public IdentityDbContext(
         IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,

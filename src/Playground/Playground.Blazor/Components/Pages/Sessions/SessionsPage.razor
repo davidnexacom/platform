@@ -1,6 +1,7 @@
 @page "/sessions"
 @using FSH.Playground.Blazor.ApiClient
 @using FSH.Framework.Blazor.UI.Components.Dialogs
+@using FSH.Framework.Blazor.UI.Components.Cards
 @inherits ComponentBase
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
@@ -27,60 +28,32 @@
 @* Stats Cards *@
 <MudGrid Class="mb-4">
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Devices" Color="Color.Primary" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">Total</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@_stats.Total</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Active Sessions</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.Devices"
+                     IconColor="Color.Primary"
+                     Value="@_stats.Total.ToString()"
+                     Label="Active Sessions"
+                     Badge="Total" />
     </MudItem>
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Info" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">Desktop</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@_stats.Desktop</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Desktop Sessions</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.Computer"
+                     IconColor="Color.Info"
+                     Value="@_stats.Desktop.ToString()"
+                     Label="Desktop Sessions"
+                     Badge="Desktop" />
     </MudItem>
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.PhoneAndroid" Color="Color.Success" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Mobile</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@_stats.Mobile</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Mobile Sessions</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.PhoneAndroid"
+                     IconColor="Color.Success"
+                     Value="@_stats.Mobile.ToString()"
+                     Label="Mobile Sessions"
+                     Badge="Mobile" />
     </MudItem>
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Tablet" Color="Color.Warning" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">Tablet</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@_stats.Tablet</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Tablet Sessions</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.Tablet"
+                     IconColor="Color.Warning"
+                     Value="@_stats.Tablet.ToString()"
+                     Label="Tablet Sessions"
+                     Badge="Tablet" />
     </MudItem>
 </MudGrid>
 
@@ -206,16 +179,6 @@
 </MudPaper>
 
 <style>
-    .stats-card {
-        border-radius: 12px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .stats-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    }
-
     .device-avatar {
         width: 36px;
         height: 36px;

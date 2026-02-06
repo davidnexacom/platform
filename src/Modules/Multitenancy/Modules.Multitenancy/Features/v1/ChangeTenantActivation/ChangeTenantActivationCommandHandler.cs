@@ -26,10 +26,10 @@ public sealed class ChangeTenantActivationCommandHandler : ICommandHandler<Chang
         }
         else
         {
-            message = await _tenantService.DeactivateAsync(command.TenantId).ConfigureAwait(false);
+            message = await _tenantService.DeactivateAsync(command.TenantId, cancellationToken).ConfigureAwait(false);
         }
 
-        var status = await _tenantService.GetStatusAsync(command.TenantId).ConfigureAwait(false);
+        var status = await _tenantService.GetStatusAsync(command.TenantId, cancellationToken).ConfigureAwait(false);
 
         return new TenantLifecycleResultDto
         {

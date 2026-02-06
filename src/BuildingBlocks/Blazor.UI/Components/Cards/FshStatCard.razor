@@ -1,0 +1,59 @@
+@namespace FSH.Framework.Blazor.UI.Components.Cards
+
+<div class="fsh-stat-card-wrapper">
+    <MudCard Class="fsh-stat-card" Elevation="2">
+        <MudCardContent Class="pa-4">
+            <MudStack Spacing="2">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                    <MudIcon Icon="@Icon" Color="@IconColor" Size="Size.Large" />
+                    @if (!string.IsNullOrEmpty(Badge))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="@EffectiveBadgeColor" Variant="Variant.Text">@Badge</MudChip>
+                    }
+                </MudStack>
+                <MudText Typo="Typo.h4" Class="fw-700">@Value</MudText>
+                <MudText Typo="Typo.body2" Class="text-muted">@Label</MudText>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+</div>
+
+@code {
+    /// <summary>
+    /// The MudBlazor icon to display (e.g., Icons.Material.Filled.People)
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Icon { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The color theme for the icon and accent elements
+    /// </summary>
+    [Parameter]
+    public Color IconColor { get; set; } = Color.Primary;
+
+    /// <summary>
+    /// The main metric value to display
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The label/description for the metric
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional badge text displayed in the top-right corner
+    /// </summary>
+    [Parameter]
+    public string? Badge { get; set; }
+
+    /// <summary>
+    /// The color for the badge (defaults to IconColor if not specified)
+    /// </summary>
+    [Parameter]
+    public Color? BadgeColor { get; set; }
+
+    private Color EffectiveBadgeColor => BadgeColor ?? IconColor;
+}

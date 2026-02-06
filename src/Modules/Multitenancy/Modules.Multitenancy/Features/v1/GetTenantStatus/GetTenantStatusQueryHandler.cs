@@ -11,7 +11,7 @@ public sealed class GetTenantStatusQueryHandler(ITenantService tenantService)
     public async ValueTask<TenantStatusDto> Handle(GetTenantStatusQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return await tenantService.GetStatusAsync(query.TenantId);
+        return await tenantService.GetStatusAsync(query.TenantId, cancellationToken).ConfigureAwait(false);
     }
 }
 

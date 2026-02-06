@@ -40,7 +40,7 @@ public sealed class TenantService : ITenantService
 
     public async Task<string> ActivateAsync(string id, CancellationToken cancellationToken)
     {
-        var tenant = await GetTenantInfoAsync(id).ConfigureAwait(false);
+        var tenant = await GetTenantInfoAsync(id, cancellationToken).ConfigureAwait(false);
 
         if (tenant.IsActive)
         {
@@ -98,9 +98,9 @@ public sealed class TenantService : ITenantService
         }
     }
 
-    public async Task<string> DeactivateAsync(string id)
+    public async Task<string> DeactivateAsync(string id, CancellationToken cancellationToken = default)
     {
-        var tenant = await GetTenantInfoAsync(id).ConfigureAwait(false);
+        var tenant = await GetTenantInfoAsync(id, cancellationToken).ConfigureAwait(false);
         if (!tenant.IsActive)
         {
             throw new CustomException($"tenant {id} is already deactivated");
@@ -122,10 +122,10 @@ public sealed class TenantService : ITenantService
         return $"tenant {id} is now deactivated";
     }
 
-    public async Task<bool> ExistsWithIdAsync(string id) =>
+    public async Task<bool> ExistsWithIdAsync(string id, CancellationToken cancellationToken = default) =>
         await _tenantStore.GetAsync(id).ConfigureAwait(false) is not null;
 
-    public async Task<bool> ExistsWithNameAsync(string name) =>
+    public async Task<bool> ExistsWithNameAsync(string name, CancellationToken cancellationToken = default) =>
         (await _tenantStore.GetAllAsync().ConfigureAwait(false)).Any(t => t.Name == name);
 
     public async Task<PagedResponse<TenantDto>> GetAllAsync(GetTenantsQuery query, CancellationToken cancellationToken)
@@ -141,9 +141,9 @@ public sealed class TenantService : ITenantService
             .ConfigureAwait(false);
     }
 
-    public async Task<TenantStatusDto> GetStatusAsync(string id)
+    public async Task<TenantStatusDto> GetStatusAsync(string id, CancellationToken cancellationToken = default)
     {
-        var tenant = await GetTenantInfoAsync(id).ConfigureAwait(false);
+        var tenant = await GetTenantInfoAsync(id, cancellationToken).ConfigureAwait(false);
 
         return new TenantStatusDto
         {
@@ -157,9 +157,9 @@ public sealed class TenantService : ITenantService
         };
     }
 
-    public async Task<DateTime> UpgradeSubscription(string id, DateTime extendedExpiryDate)
+    public async Task<DateTime> UpgradeSubscriptionAsync(string id, DateTime extendedExpiryDate, CancellationToken cancellationToken = default)
     {
-        var tenant = await GetTenantInfoAsync(id).ConfigureAwait(false);
+        var tenant = await GetTenantInfoAsync(id, cancellationToken).ConfigureAwait(false);
 
         // Ensure the date is UTC for PostgreSQL compatibility
         var utcExpiryDate = extendedExpiryDate.Kind == DateTimeKind.Utc
@@ -171,7 +171,7 @@ public sealed class TenantService : ITenantService
         return tenant.ValidUpto;
     }
 
-    private async Task<AppTenantInfo> GetTenantInfoAsync(string id) =>
+    private async Task<AppTenantInfo> GetTenantInfoAsync(string id, CancellationToken cancellationToken = default) =>
         await _tenantStore.GetAsync(id).ConfigureAwait(false)
             ?? throw new NotFoundException($"{typeof(AppTenantInfo).Name} {id} Not Found.");
 }

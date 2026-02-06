@@ -1,27 +1,21 @@
-﻿using FluentValidation;
-using FSH.Framework.Shared.Identity.Claims;
+using FluentValidation;
+using FSH.Framework.Core.Context;
+using FSH.Modules.Identity.Contracts.Services;
 using FSH.Modules.Identity.Contracts.v1.Users.ChangePassword;
-using FSH.Modules.Identity.Features.v1.Users;
-using FSH.Modules.Identity.Services;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Http;
 
 namespace FSH.Modules.Identity.Features.v1.Users.ChangePassword;
 
-public class ChangePasswordValidator : AbstractValidator<ChangePasswordCommand>
+public sealed class ChangePasswordValidator : AbstractValidator<ChangePasswordCommand>
 {
-    private readonly UserManager<FshUser> _userManager;
     private readonly IPasswordHistoryService _passwordHistoryService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ICurrentUser _currentUser;
 
     public ChangePasswordValidator(
-        UserManager<FshUser> userManager,
         IPasswordHistoryService passwordHistoryService,
-        IHttpContextAccessor httpContextAccessor)
+        ICurrentUser currentUser)
     {
-        _userManager = userManager;
         _passwordHistoryService = passwordHistoryService;
-        _httpContextAccessor = httpContextAccessor;
+        _currentUser = currentUser;
 
         RuleFor(p => p.Password)
             .NotEmpty()
@@ -42,20 +36,15 @@ public class ChangePasswordValidator : AbstractValidator<ChangePasswordCommand>
 
     private async Task<bool> NotBeInPasswordHistoryAsync(string newPassword, CancellationToken cancellationToken)
     {
-        var userId = _httpContextAccessor.HttpContext?.User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
+        if (!_currentUser.IsAuthenticated())
         {
             return true; // Let other validation handle unauthorized access
         }
 
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user is null)
-        {
-            return true; // Let other validation handle user not found
-        }
+        var userId = _currentUser.GetUserId().ToString();
 
         // Check if password is in history
-        var isInHistory = await _passwordHistoryService.IsPasswordInHistoryAsync(user, newPassword, cancellationToken);
+        var isInHistory = await _passwordHistoryService.IsPasswordInHistoryAsync(userId, newPassword, cancellationToken);
         return !isInHistory; // Return true if NOT in history (validation passes)
     }
 }

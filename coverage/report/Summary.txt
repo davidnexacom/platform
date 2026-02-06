@@ -1,0 +1,485 @@
+Summary
+  Generated on: 08-Jan-26 - 3:06:51 PM
+  Coverage date: 08-Jan-26 - 2:12:06 PM - 08-Jan-26 - 3:05:50 PM
+  Parser: MultiReport (10x Cobertura)
+  Assemblies: 16
+  Classes: 433
+  Files: 413
+  Line coverage: 3.2%
+  Covered lines: 520
+  Uncovered lines: 15635
+  Coverable lines: 16155
+  Total lines: 25523
+  Branch coverage: 3.6% (127 of 3475)
+  Covered branches: 127
+  Total branches: 3475
+  Method coverage: 11.4% (194 of 1695)
+  Full method coverage: 11.3% (192 of 1695)
+  Covered methods: 194
+  Fully covered methods: 192
+  Total methods: 1695
+
+FSH.Framework.Caching                                                                                                                                0%
+  FSH.Framework.Caching.CacheServiceExtensions                                                                                                       0%
+  FSH.Framework.Caching.CachingOptions                                                                                                               0%
+  FSH.Framework.Caching.DistributedCacheService                                                                                                      0%
+  FSH.Framework.Caching.Extensions                                                                                                                   0%
+  FSH.Framework.Caching.HybridCacheService                                                                                                           0%
+
+FSH.Framework.Core                                                                                                                                13.3%
+  FSH.Framework.Core.Domain.BaseEntity<T>                                                                                                           40%
+  FSH.Framework.Core.Domain.DomainEvent                                                                                                              0%
+  FSH.Framework.Core.Exceptions.CustomException                                                                                                   33.3%
+  FSH.Framework.Core.Exceptions.ForbiddenException                                                                                                   0%
+  FSH.Framework.Core.Exceptions.NotFoundException                                                                                                    0%
+  FSH.Framework.Core.Exceptions.UnauthorizedException                                                                                                0%
+
+FSH.Framework.Eventing                                                                                                                               0%
+  FSH.Framework.Eventing.EventingOptions                                                                                                             0%
+  FSH.Framework.Eventing.Inbox.EfCoreInboxStore<T>                                                                                                   0%
+  FSH.Framework.Eventing.Inbox.InboxMessage                                                                                                          0%
+  FSH.Framework.Eventing.Inbox.InboxMessageConfiguration                                                                                             0%
+  FSH.Framework.Eventing.InMemory.InMemoryEventBus                                                                                                   0%
+  FSH.Framework.Eventing.Outbox.EfCoreOutboxStore<T>                                                                                                 0%
+  FSH.Framework.Eventing.Outbox.OutboxDispatcher                                                                                                     0%
+  FSH.Framework.Eventing.Outbox.OutboxMessage                                                                                                        0%
+  FSH.Framework.Eventing.Outbox.OutboxMessageConfiguration                                                                                           0%
+  FSH.Framework.Eventing.Serialization.JsonEventSerializer                                                                                           0%
+  FSH.Framework.Eventing.ServiceCollectionExtensions                                                                                                 0%
+
+FSH.Framework.Jobs                                                                                                                                   0%
+  FSH.Framework.Jobs.BasicAuthenticationTokens                                                                                                       0%
+  FSH.Framework.Jobs.Extensions                                                                                                                      0%
+  FSH.Framework.Jobs.FshJobActivator                                                                                                                 0%
+  FSH.Framework.Jobs.FshJobFilter                                                                                                                    0%
+  FSH.Framework.Jobs.HangfireCustomBasicAuthenticationFilter                                                                                         0%
+  FSH.Framework.Jobs.HangfireOptions                                                                                                                 0%
+  FSH.Framework.Jobs.HangfireTelemetryFilter                                                                                                         0%
+  FSH.Framework.Jobs.LogJobFilter                                                                                                                    0%
+  FSH.Framework.Jobs.Services.HangfireService                                                                                                        0%
+
+FSH.Framework.Mailing                                                                                                                                0%
+  FSH.Framework.Mailing.Extensions                                                                                                                   0%
+  FSH.Framework.Mailing.MailOptions                                                                                                                  0%
+  FSH.Framework.Mailing.MailRequest                                                                                                                  0%
+  FSH.Framework.Mailing.Services.SmtpMailService                                                                                                     0%
+
+FSH.Framework.Persistence                                                                                                                            0%
+  FSH.Framework.Persistence.ConnectionStringValidator                                                                                                0%
+  FSH.Framework.Persistence.Context.BaseDbContext                                                                                                    0%
+  FSH.Framework.Persistence.DatabaseOptionsStartupLogger                                                                                             0%
+  FSH.Framework.Persistence.Extensions                                                                                                               0%
+  FSH.Framework.Persistence.Inteceptors.DomainEventsInterceptor                                                                                      0%
+  FSH.Framework.Persistence.ModelBuilderExtensions                                                                                                   0%
+  FSH.Framework.Persistence.OptionsBuilderExtensions                                                                                                 0%
+  FSH.Framework.Persistence.OrderExpression<T>                                                                                                       0%
+  FSH.Framework.Persistence.PaginationExtensions                                                                                                     0%
+  FSH.Framework.Persistence.Specification<T1, T2>                                                                                                    0%
+  FSH.Framework.Persistence.SpecificationEvaluator                                                                                                   0%
+  FSH.Framework.Persistence.SpecificationExtensions                                                                                                  0%
+  FSH.Framework.Persistence.Specifications.Specification<T>                                                                                          0%
+
+FSH.Framework.Shared                                                                                                                               2.6%
+  FSH.Framework.Shared.Auditing.AuditSensitiveAttribute                                                                                              0%
+  FSH.Framework.Shared.Constants.FshPermission                                                                                                       0%
+  FSH.Framework.Shared.Constants.PermissionConstants                                                                                                 0%
+  FSH.Framework.Shared.Constants.RoleConstants                                                                                                       0%
+  FSH.Framework.Shared.Identity.Authorization.EndpointExtensions                                                                                     0%
+  FSH.Framework.Shared.Identity.Authorization.RequiredPermissionAttribute                                                                            0%
+  FSH.Framework.Shared.Identity.Claims.ClaimsPrincipalExtensions                                                                                  22.2%
+  FSH.Framework.Shared.Multitenancy.AppTenantInfo                                                                                                    0%
+  FSH.Framework.Shared.Persistence.DatabaseOptions                                                                                                   0%
+  FSH.Framework.Shared.Persistence.PagedResponse<T>                                                                                                  0%
+
+FSH.Framework.Storage                                                                                                                                0%
+  FSH.Framework.Storage.DTOs.FileUploadRequest                                                                                                       0%
+  FSH.Framework.Storage.Extensions                                                                                                                   0%
+  FSH.Framework.Storage.FileTypeMetadata                                                                                                             0%
+  FSH.Framework.Storage.FileValidationRules                                                                                                          0%
+  FSH.Framework.Storage.Local.LocalStorageService                                                                                                    0%
+  FSH.Framework.Storage.S3.S3StorageOptions                                                                                                          0%
+  FSH.Framework.Storage.S3.S3StorageService                                                                                                          0%
+
+FSH.Framework.Web                                                                                                                                  0.3%
+  FSH.Framework.Web.Auth.CurrentUserMiddleware                                                                                                       0%
+  FSH.Framework.Web.Cors.CorsOptions                                                                                                                 0%
+  FSH.Framework.Web.Cors.Extensions                                                                                                                  0%
+  FSH.Framework.Web.Exceptions.GlobalExceptionHandler                                                                                                0%
+  FSH.Framework.Web.Extensions                                                                                                                       0%
+  FSH.Framework.Web.FshPipelineOptions                                                                                                               0%
+  FSH.Framework.Web.FshPlatformOptions                                                                                                               0%
+  FSH.Framework.Web.Health.HealthEndpoints                                                                                                           0%
+  FSH.Framework.Web.Mediator.Behaviors.ValidationBehavior<T1, T2>                                                                                    0%
+  FSH.Framework.Web.Mediator.Extensions                                                                                                              0%
+  FSH.Framework.Web.Modules.FshModuleAttribute                                                                                                    71.4%
+  FSH.Framework.Web.Modules.ModuleLoader                                                                                                             0%
+  FSH.Framework.Web.Observability.Logging.Serilog.Extensions                                                                                         0%
+  FSH.Framework.Web.Observability.Logging.Serilog.HttpRequestContextEnricher                                                                         0%
+  FSH.Framework.Web.Observability.Logging.Serilog.StaticLogger                                                                                       0%
+  FSH.Framework.Web.Observability.OpenTelemetry.Extensions                                                                                           0%
+  FSH.Framework.Web.Observability.OpenTelemetry.MediatorTracingBehavior<T1, T2>                                                                      0%
+  FSH.Framework.Web.Observability.OpenTelemetry.OpenTelemetryOptions                                                                                 0%
+  FSH.Framework.Web.OpenApi.BearerSecuritySchemeTransformer                                                                                          0%
+  FSH.Framework.Web.OpenApi.Extensions                                                                                                               0%
+  FSH.Framework.Web.OpenApi.OpenApiOptions                                                                                                           0%
+  FSH.Framework.Web.Origin.OriginOptions                                                                                                             0%
+  FSH.Framework.Web.RateLimiting.Extensions                                                                                                          0%
+  FSH.Framework.Web.RateLimiting.FixedWindowPolicyOptions                                                                                            0%
+  FSH.Framework.Web.RateLimiting.RateLimitingOptions                                                                                                 0%
+  FSH.Framework.Web.Security.SecurityExtensions                                                                                                      0%
+  FSH.Framework.Web.Security.SecurityHeadersMiddleware                                                                                               0%
+  FSH.Framework.Web.Security.SecurityHeadersOptions                                                                                                  0%
+  FSH.Framework.Web.Versioning.Extensions                                                                                                            0%
+  Microsoft.AspNetCore.OpenApi.Generated                                                                                                             0%
+  System.Runtime.CompilerServices                                                                                                                    0%
+
+FSH.Modules.Auditing                                                                                                                               4.9%
+  FSH.Modules.Auditing.Audit                                                                                                                         0%
+  FSH.Modules.Auditing.AuditBackgroundWorker                                                                                                         0%
+  FSH.Modules.Auditing.AuditHttpMiddleware                                                                                                           0%
+  FSH.Modules.Auditing.AuditingConfigurator                                                                                                          0%
+  FSH.Modules.Auditing.AuditingModule                                                                                                                0%
+  FSH.Modules.Auditing.AuditRecord                                                                                                                   0%
+  FSH.Modules.Auditing.ChannelAuditPublisher                                                                                                         0%
+  FSH.Modules.Auditing.ContentTypeHelper                                                                                                          62.5%
+  FSH.Modules.Auditing.DefaultAuditClient                                                                                                            0%
+  FSH.Modules.Auditing.DefaultAuditScope                                                                                                             0%
+  FSH.Modules.Auditing.Features.v1.GetAuditById.GetAuditByIdEndpoint                                                                                 0%
+  FSH.Modules.Auditing.Features.v1.GetAuditById.GetAuditByIdQueryHandler                                                                             0%
+  FSH.Modules.Auditing.Features.v1.GetAudits.GetAuditsEndpoint                                                                                       0%
+  FSH.Modules.Auditing.Features.v1.GetAudits.GetAuditsQueryHandler                                                                                   0%
+  FSH.Modules.Auditing.Features.v1.GetAudits.GetAuditsQueryValidator                                                                               100%
+  FSH.Modules.Auditing.Features.v1.GetAuditsByCorrelation.GetAuditsByCorrelationEndpoint                                                             0%
+  FSH.Modules.Auditing.Features.v1.GetAuditsByCorrelation.GetAuditsByCorrelationQueryHandler                                                         0%
+  FSH.Modules.Auditing.Features.v1.GetAuditsByCorrelation.GetAuditsByCorrelationQueryValidator                                                     100%
+  FSH.Modules.Auditing.Features.v1.GetAuditsByTrace.GetAuditsByTraceEndpoint                                                                         0%
+  FSH.Modules.Auditing.Features.v1.GetAuditsByTrace.GetAuditsByTraceQueryHandler                                                                     0%
+  FSH.Modules.Auditing.Features.v1.GetAuditsByTrace.GetAuditsByTraceQueryValidator                                                                 100%
+  FSH.Modules.Auditing.Features.v1.GetAuditSummary.GetAuditSummaryEndpoint                                                                           0%
+  FSH.Modules.Auditing.Features.v1.GetAuditSummary.GetAuditSummaryQueryHandler                                                                       0%
+  FSH.Modules.Auditing.Features.v1.GetAuditSummary.GetAuditSummaryQueryValidator                                                                   100%
+  FSH.Modules.Auditing.Features.v1.GetExceptionAudits.GetExceptionAuditsEndpoint                                                                     0%
+  FSH.Modules.Auditing.Features.v1.GetExceptionAudits.GetExceptionAuditsQueryHandler                                                                 0%
+  FSH.Modules.Auditing.Features.v1.GetExceptionAudits.GetExceptionAuditsQueryValidator                                                             100%
+  FSH.Modules.Auditing.Features.v1.GetSecurityAudits.GetSecurityAuditsEndpoint                                                                       0%
+  FSH.Modules.Auditing.Features.v1.GetSecurityAudits.GetSecurityAuditsQueryHandler                                                                   0%
+  FSH.Modules.Auditing.Features.v1.GetSecurityAudits.GetSecurityAuditsQueryValidator                                                               100%
+  FSH.Modules.Auditing.HttpAuditScope                                                                                                                0%
+  FSH.Modules.Auditing.HttpBodyReader                                                                                                                0%
+  FSH.Modules.Auditing.HttpContextRoutingExtensions                                                                                                  0%
+  FSH.Modules.Auditing.JsonMaskingService                                                                                                         91.6%
+  FSH.Modules.Auditing.Persistence.AuditDbContext                                                                                                    0%
+  FSH.Modules.Auditing.Persistence.AuditDbInitializer                                                                                                0%
+  FSH.Modules.Auditing.Persistence.AuditingSaveChangesInterceptor                                                                                    0%
+  FSH.Modules.Auditing.Persistence.AuditRecordConfiguration                                                                                          0%
+  FSH.Modules.Auditing.Persistence.EntityDiffBuilder                                                                                                 0%
+  FSH.Modules.Auditing.Persistence.SqlAuditSink                                                                                                      0%
+  FSH.Modules.Auditing.SecurityAudit                                                                                                                 0%
+  FSH.Modules.Auditing.ServiceCollectionExtensions                                                                                                   0%
+  FSH.Modules.Auditing.SystemTextJsonAuditSerializer                                                                                                 0%
+  Microsoft.AspNetCore.OpenApi.Generated                                                                                                             0%
+  System.Runtime.CompilerServices                                                                                                                    0%
+
+FSH.Modules.Auditing.Contracts                                                                                                                    13.4%
+  FSH.Modules.Auditing.Contracts.ActivityEventPayload                                                                                                0%
+  FSH.Modules.Auditing.Contracts.AuditEnvelope                                                                                                     100%
+  FSH.Modules.Auditing.Contracts.AuditHttpOptions                                                                                                    0%
+  FSH.Modules.Auditing.Contracts.Dtos.AuditDetailDto                                                                                                 0%
+  FSH.Modules.Auditing.Contracts.Dtos.AuditSummaryAggregateDto                                                                                       0%
+  FSH.Modules.Auditing.Contracts.Dtos.AuditSummaryDto                                                                                                0%
+  FSH.Modules.Auditing.Contracts.EntityChangeEventPayload                                                                                            0%
+  FSH.Modules.Auditing.Contracts.ExceptionEventPayload                                                                                               0%
+  FSH.Modules.Auditing.Contracts.ExceptionSeverityClassifier                                                                                       100%
+  FSH.Modules.Auditing.Contracts.PropertyChange                                                                                                      0%
+  FSH.Modules.Auditing.Contracts.SecurityEventPayload                                                                                                0%
+  FSH.Modules.Auditing.Contracts.v1.GetAuditById.GetAuditByIdQuery                                                                                   0%
+  FSH.Modules.Auditing.Contracts.v1.GetAudits.GetAuditsQuery                                                                                       100%
+  FSH.Modules.Auditing.Contracts.v1.GetAuditsByCorrelation.GetAuditsByCorrelationQuery                                                             100%
+  FSH.Modules.Auditing.Contracts.v1.GetAuditsByTrace.GetAuditsByTraceQuery                                                                         100%
+  FSH.Modules.Auditing.Contracts.v1.GetAuditSummary.GetAuditSummaryQuery                                                                          66.6%
+  FSH.Modules.Auditing.Contracts.v1.GetExceptionAudits.GetExceptionAuditsQuery                                                                    33.3%
+  FSH.Modules.Auditing.Contracts.v1.GetSecurityAudits.GetSecurityAuditsQuery                                                                        40%
+  Microsoft.AspNetCore.OpenApi.Generated                                                                                                             0%
+  System.Runtime.CompilerServices                                                                                                                    0%
+
+FSH.Modules.Identity                                                                                                                               4.5%
+  FSH.Framework.Identity.v1.Tokens.RefreshToken.RefreshTokenEndpoint                                                                                 0%
+  FSH.Framework.Identity.v1.Tokens.TokenGeneration.GenerateTokenEndpoint                                                                             0%
+  FSH.Framework.Infrastructure.Identity.Users.Endpoints.SelfRegisterUserEndpoint                                                                     0%
+  FSH.Framework.Infrastructure.Identity.Users.Services.UserService                                                                                   0%
+  FSH.Modules.Identity.Authorization.Jwt.ConfigureJwtBearerOptions                                                                                   0%
+  FSH.Modules.Identity.Authorization.Jwt.Extensions                                                                                                  0%
+  FSH.Modules.Identity.Authorization.Jwt.JwtOptions                                                                                                100%
+  FSH.Modules.Identity.Authorization.PathAwareAuthorizationHandler                                                                                   0%
+  FSH.Modules.Identity.Authorization.RequiredPermissionAuthorizationExtensions                                                                       0%
+  FSH.Modules.Identity.Authorization.RequiredPermissionAuthorizationHandler                                                                          0%
+  FSH.Modules.Identity.Data.ApplicationRoleClaimConfig                                                                                               0%
+  FSH.Modules.Identity.Data.ApplicationRoleConfig                                                                                                    0%
+  FSH.Modules.Identity.Data.ApplicationUserConfig                                                                                                    0%
+  FSH.Modules.Identity.Data.Configurations.GroupConfiguration                                                                                        0%
+  FSH.Modules.Identity.Data.Configurations.GroupRoleConfiguration                                                                                    0%
+  FSH.Modules.Identity.Data.Configurations.PasswordHistoryConfiguration                                                                              0%
+  FSH.Modules.Identity.Data.Configurations.UserGroupConfiguration                                                                                    0%
+  FSH.Modules.Identity.Data.Configurations.UserSessionConfiguration                                                                                  0%
+  FSH.Modules.Identity.Data.IdentityDbContext                                                                                                        0%
+  FSH.Modules.Identity.Data.IdentityDbInitializer                                                                                                    0%
+  FSH.Modules.Identity.Data.IdentityUserClaimConfig                                                                                                  0%
+  FSH.Modules.Identity.Data.IdentityUserLoginConfig                                                                                                  0%
+  FSH.Modules.Identity.Data.IdentityUserRoleConfig                                                                                                   0%
+  FSH.Modules.Identity.Data.IdentityUserTokenConfig                                                                                                  0%
+  FSH.Modules.Identity.Data.PasswordPolicyOptions                                                                                                  100%
+  FSH.Modules.Identity.Events.TokenGeneratedLogHandler                                                                                               0%
+  FSH.Modules.Identity.Events.UserRegisteredEmailHandler                                                                                             0%
+  FSH.Modules.Identity.Features.v1.Groups.AddUsersToGroup.AddUsersRequest                                                                            0%
+  FSH.Modules.Identity.Features.v1.Groups.AddUsersToGroup.AddUsersToGroupCommandHandler                                                              0%
+  FSH.Modules.Identity.Features.v1.Groups.AddUsersToGroup.AddUsersToGroupEndpoint                                                                    0%
+  FSH.Modules.Identity.Features.v1.Groups.CreateGroup.CreateGroupCommandHandler                                                                      0%
+  FSH.Modules.Identity.Features.v1.Groups.CreateGroup.CreateGroupCommandValidator                                                                  100%
+  FSH.Modules.Identity.Features.v1.Groups.CreateGroup.CreateGroupEndpoint                                                                            0%
+  FSH.Modules.Identity.Features.v1.Groups.DeleteGroup.DeleteGroupCommandHandler                                                                      0%
+  FSH.Modules.Identity.Features.v1.Groups.DeleteGroup.DeleteGroupEndpoint                                                                            0%
+  FSH.Modules.Identity.Features.v1.Groups.GetGroupById.GetGroupByIdEndpoint                                                                          0%
+  FSH.Modules.Identity.Features.v1.Groups.GetGroupById.GetGroupByIdQueryHandler                                                                      0%
+  FSH.Modules.Identity.Features.v1.Groups.GetGroupMembers.GetGroupMembersEndpoint                                                                    0%
+  FSH.Modules.Identity.Features.v1.Groups.GetGroupMembers.GetGroupMembersQueryHandler                                                                0%
+  FSH.Modules.Identity.Features.v1.Groups.GetGroups.GetGroupsEndpoint                                                                                0%
+  FSH.Modules.Identity.Features.v1.Groups.GetGroups.GetGroupsQueryHandler                                                                            0%
+  FSH.Modules.Identity.Features.v1.Groups.Group                                                                                                      0%
+  FSH.Modules.Identity.Features.v1.Groups.GroupRole                                                                                                  0%
+  FSH.Modules.Identity.Features.v1.Groups.RemoveUserFromGroup.RemoveUserFromGroupCommandHandler                                                      0%
+  FSH.Modules.Identity.Features.v1.Groups.RemoveUserFromGroup.RemoveUserFromGroupEndpoint                                                            0%
+  FSH.Modules.Identity.Features.v1.Groups.UpdateGroup.UpdateGroupCommandHandler                                                                      0%
+  FSH.Modules.Identity.Features.v1.Groups.UpdateGroup.UpdateGroupCommandValidator                                                                  100%
+  FSH.Modules.Identity.Features.v1.Groups.UpdateGroup.UpdateGroupEndpoint                                                                            0%
+  FSH.Modules.Identity.Features.v1.Groups.UpdateGroup.UpdateGroupRequest                                                                             0%
+  FSH.Modules.Identity.Features.v1.Groups.UserGroup                                                                                                  0%
+  FSH.Modules.Identity.Features.v1.RoleClaims.FshRoleClaim                                                                                           0%
+  FSH.Modules.Identity.Features.v1.Roles.DeleteRole.DeleteRoleCommandHandler                                                                         0%
+  FSH.Modules.Identity.Features.v1.Roles.DeleteRole.DeleteRoleEndpoint                                                                               0%
+  FSH.Modules.Identity.Features.v1.Roles.FshRole                                                                                                     0%
+  FSH.Modules.Identity.Features.v1.Roles.GetRoleById.GetRoleByIdEndpoint                                                                             0%
+  FSH.Modules.Identity.Features.v1.Roles.GetRoleById.GetRoleByIdQueryHandler                                                                         0%
+  FSH.Modules.Identity.Features.v1.Roles.GetRoles.GetRolesEndpoint                                                                                   0%
+  FSH.Modules.Identity.Features.v1.Roles.GetRoles.GetRolesQueryHandler                                                                               0%
+  FSH.Modules.Identity.Features.v1.Roles.GetRoleWithPermissions.GetRolePermissionsEndpoint                                                           0%
+  FSH.Modules.Identity.Features.v1.Roles.GetRoleWithPermissions.GetRoleWithPermissionsQueryHandler                                                   0%
+  FSH.Modules.Identity.Features.v1.Roles.RoleService                                                                                                 0%
+  FSH.Modules.Identity.Features.v1.Roles.UpdateRolePermissions.UpdatePermissionsCommandHandler                                                       0%
+  FSH.Modules.Identity.Features.v1.Roles.UpdateRolePermissions.UpdatePermissionsCommandValidator                                                   100%
+  FSH.Modules.Identity.Features.v1.Roles.UpdateRolePermissions.UpdateRolePermissionsEndpoint                                                         0%
+  FSH.Modules.Identity.Features.v1.Roles.UpsertRole.CreateOrUpdateRoleEndpoint                                                                       0%
+  FSH.Modules.Identity.Features.v1.Roles.UpsertRole.UpsertRoleCommandHandler                                                                         0%
+  FSH.Modules.Identity.Features.v1.Roles.UpsertRole.UpsertRoleCommandValidator                                                                     100%
+  FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeAllSessions.AdminRevokeAllSessionsCommandHandler                                              0%
+  FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeAllSessions.AdminRevokeAllSessionsEndpoint                                                    0%
+  FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeSession.AdminRevokeSessionCommandHandler                                                      0%
+  FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeSession.AdminRevokeSessionEndpoint                                                            0%
+  FSH.Modules.Identity.Features.v1.Sessions.GetMySessions.GetMySessionsEndpoint                                                                      0%
+  FSH.Modules.Identity.Features.v1.Sessions.GetMySessions.GetMySessionsQueryHandler                                                                  0%
+  FSH.Modules.Identity.Features.v1.Sessions.GetUserSessions.GetUserSessionsEndpoint                                                                  0%
+  FSH.Modules.Identity.Features.v1.Sessions.GetUserSessions.GetUserSessionsQueryHandler                                                              0%
+  FSH.Modules.Identity.Features.v1.Sessions.RevokeAllSessions.RevokeAllSessionsCommandHandler                                                        0%
+  FSH.Modules.Identity.Features.v1.Sessions.RevokeAllSessions.RevokeAllSessionsEndpoint                                                              0%
+  FSH.Modules.Identity.Features.v1.Sessions.RevokeSession.RevokeSessionCommandHandler                                                                0%
+  FSH.Modules.Identity.Features.v1.Sessions.RevokeSession.RevokeSessionEndpoint                                                                      0%
+  FSH.Modules.Identity.Features.v1.Sessions.UserSession                                                                                              0%
+  FSH.Modules.Identity.Features.v1.Tokens.RefreshToken.RefreshTokenCommandHandler                                                                    0%
+  FSH.Modules.Identity.Features.v1.Tokens.RefreshToken.RefreshTokenCommandValidator                                                                100%
+  FSH.Modules.Identity.Features.v1.Tokens.TokenGeneration.GenerateTokenCommandHandler                                                                0%
+  FSH.Modules.Identity.Features.v1.Tokens.TokenGeneration.GenerateTokenCommandValidator                                                            100%
+  FSH.Modules.Identity.Features.v1.Users.AssignUserRoles.AssignUserRolesCommandHandler                                                               0%
+  FSH.Modules.Identity.Features.v1.Users.AssignUserRoles.AssignUserRolesEndpoint                                                                     0%
+  FSH.Modules.Identity.Features.v1.Users.ChangePassword.ChangePasswordCommandHandler                                                                 0%
+  FSH.Modules.Identity.Features.v1.Users.ChangePassword.ChangePasswordEndpoint                                                                       0%
+  FSH.Modules.Identity.Features.v1.Users.ChangePassword.ChangePasswordValidator                                                                      0%
+  FSH.Modules.Identity.Features.v1.Users.ConfirmEmail.ConfirmEmailCommandHandler                                                                     0%
+  FSH.Modules.Identity.Features.v1.Users.ConfirmEmail.ConfirmEmailEndpoint                                                                           0%
+  FSH.Modules.Identity.Features.v1.Users.DeleteUser.DeleteUserCommandHandler                                                                         0%
+  FSH.Modules.Identity.Features.v1.Users.DeleteUser.DeleteUserEndpoint                                                                               0%
+  FSH.Modules.Identity.Features.v1.Users.ForgotPassword.ForgotPasswordCommandHandler                                                                 0%
+  FSH.Modules.Identity.Features.v1.Users.ForgotPassword.ForgotPasswordCommandValidator                                                               0%
+  FSH.Modules.Identity.Features.v1.Users.ForgotPassword.ForgotPasswordEndpoint                                                                       0%
+  FSH.Modules.Identity.Features.v1.Users.FshUser                                                                                                  22.2%
+  FSH.Modules.Identity.Features.v1.Users.GetUserById.GetUserByIdEndpoint                                                                             0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserById.GetUserByIdQueryHandler                                                                         0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserGroups.GetUserGroupsEndpoint                                                                         0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserGroups.GetUserGroupsQueryHandler                                                                     0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserPermissions.GetCurrentUserPermissionsQueryHandler                                                    0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserPermissions.GetUserPermissionsEndpoint                                                               0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserProfile.GetCurrentUserProfileQueryHandler                                                            0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserProfile.GetUserProfileEndpoint                                                                       0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserRoles.GetUserRolesEndpoint                                                                           0%
+  FSH.Modules.Identity.Features.v1.Users.GetUserRoles.GetUserRolesQueryHandler                                                                       0%
+  FSH.Modules.Identity.Features.v1.Users.GetUsers.GetUsersListEndpoint                                                                               0%
+  FSH.Modules.Identity.Features.v1.Users.GetUsers.GetUsersQueryHandler                                                                               0%
+  FSH.Modules.Identity.Features.v1.Users.PasswordHistory.PasswordHistory                                                                             0%
+  FSH.Modules.Identity.Features.v1.Users.RegisterUser.RegisterUserCommandHandler                                                                     0%
+  FSH.Modules.Identity.Features.v1.Users.RegisterUser.RegisterUserEndpoint                                                                           0%
+  FSH.Modules.Identity.Features.v1.Users.ResetPassword.ResetPasswordCommandHandler                                                                   0%
+  FSH.Modules.Identity.Features.v1.Users.ResetPassword.ResetPasswordCommandValidator                                                                 0%
+  FSH.Modules.Identity.Features.v1.Users.ResetPassword.ResetPasswordEndpoint                                                                         0%
+  FSH.Modules.Identity.Features.v1.Users.SearchUsers.SearchUsersEndpoint                                                                             0%
+  FSH.Modules.Identity.Features.v1.Users.SearchUsers.SearchUsersQueryHandler                                                                         0%
+  FSH.Modules.Identity.Features.v1.Users.SearchUsers.SearchUsersQueryValidator                                                                     100%
+  FSH.Modules.Identity.Features.v1.Users.ToggleUserStatus.ToggleUserStatusCommandHandler                                                             0%
+  FSH.Modules.Identity.Features.v1.Users.ToggleUserStatus.ToggleUserStatusEndpoint                                                                   0%
+  FSH.Modules.Identity.Features.v1.Users.UpdateUser.UpdateUserCommandHandler                                                                         0%
+  FSH.Modules.Identity.Features.v1.Users.UpdateUser.UpdateUserCommandValidator                                                                       0%
+  FSH.Modules.Identity.Features.v1.Users.UpdateUser.UpdateUserEndpoint                                                                               0%
+  FSH.Modules.Identity.Features.v1.Users.UserImageValidator                                                                                          0%
+  FSH.Modules.Identity.IdentityMetrics                                                                                                               0%
+  FSH.Modules.Identity.IdentityModule                                                                                                                0%
+  FSH.Modules.Identity.IdentityModuleConstants                                                                                                       0%
+  FSH.Modules.Identity.Services.CurrentUserService                                                                                                 100%
+  FSH.Modules.Identity.Services.GroupRoleService                                                                                                     0%
+  FSH.Modules.Identity.Services.IdentityService                                                                                                      0%
+  FSH.Modules.Identity.Services.PasswordExpiryService                                                                                              100%
+  FSH.Modules.Identity.Services.PasswordExpiryStatus                                                                                               100%
+  FSH.Modules.Identity.Services.PasswordHistoryService                                                                                               0%
+  FSH.Modules.Identity.Services.SessionService                                                                                                       0%
+  FSH.Modules.Identity.Services.TokenService                                                                                                         0%
+  Microsoft.AspNetCore.OpenApi.Generated                                                                                                             0%
+  System.Runtime.CompilerServices                                                                                                                    0%
+
+FSH.Modules.Identity.Contracts                                                                                                                    15.8%
+  FSH.Modules.Identity.Contracts.DTOs.GroupDto                                                                                                       0%
+  FSH.Modules.Identity.Contracts.DTOs.GroupMemberDto                                                                                                 0%
+  FSH.Modules.Identity.Contracts.DTOs.RoleDto                                                                                                        0%
+  FSH.Modules.Identity.Contracts.DTOs.TokenDto                                                                                                       0%
+  FSH.Modules.Identity.Contracts.DTOs.TokenResponse                                                                                                  0%
+  FSH.Modules.Identity.Contracts.DTOs.UserDto                                                                                                        0%
+  FSH.Modules.Identity.Contracts.DTOs.UserRoleDto                                                                                                    0%
+  FSH.Modules.Identity.Contracts.DTOs.UserSessionDto                                                                                                 0%
+  FSH.Modules.Identity.Contracts.Events.TokenGeneratedIntegrationEvent                                                                               0%
+  FSH.Modules.Identity.Contracts.Events.UserRegisteredIntegrationEvent                                                                               0%
+  FSH.Modules.Identity.Contracts.v1.Groups.AddUsersToGroup.AddUsersToGroupCommand                                                                    0%
+  FSH.Modules.Identity.Contracts.v1.Groups.AddUsersToGroup.AddUsersToGroupResponse                                                                   0%
+  FSH.Modules.Identity.Contracts.v1.Groups.CreateGroup.CreateGroupCommand                                                                           80%
+  FSH.Modules.Identity.Contracts.v1.Groups.DeleteGroup.DeleteGroupCommand                                                                            0%
+  FSH.Modules.Identity.Contracts.v1.Groups.GetGroupById.GetGroupByIdQuery                                                                            0%
+  FSH.Modules.Identity.Contracts.v1.Groups.GetGroupMembers.GetGroupMembersQuery                                                                      0%
+  FSH.Modules.Identity.Contracts.v1.Groups.GetGroups.GetGroupsQuery                                                                                  0%
+  FSH.Modules.Identity.Contracts.v1.Groups.RemoveUserFromGroup.RemoveUserFromGroupCommand                                                            0%
+  FSH.Modules.Identity.Contracts.v1.Groups.UpdateGroup.UpdateGroupCommand                                                                         83.3%
+  FSH.Modules.Identity.Contracts.v1.Roles.DeleteRole.DeleteRoleCommand                                                                               0%
+  FSH.Modules.Identity.Contracts.v1.Roles.GetRole.GetRoleQuery                                                                                       0%
+  FSH.Modules.Identity.Contracts.v1.Roles.GetRoleWithPermissions.GetRoleWithPermissionsQuery                                                         0%
+  FSH.Modules.Identity.Contracts.v1.Roles.UpdatePermissions.UpdatePermissionsCommand                                                               100%
+  FSH.Modules.Identity.Contracts.v1.Roles.UpsertRole.UpsertRoleCommand                                                                             100%
+  FSH.Modules.Identity.Contracts.v1.Sessions.AdminRevokeAllSessions.AdminRevokeAllSessionsCommand                                                    0%
+  FSH.Modules.Identity.Contracts.v1.Sessions.AdminRevokeSession.AdminRevokeSessionCommand                                                            0%
+  FSH.Modules.Identity.Contracts.v1.Sessions.GetUserSessions.GetUserSessionsQuery                                                                    0%
+  FSH.Modules.Identity.Contracts.v1.Sessions.RevokeAllSessions.RevokeAllSessionsCommand                                                              0%
+  FSH.Modules.Identity.Contracts.v1.Sessions.RevokeSession.RevokeSessionCommand                                                                      0%
+  FSH.Modules.Identity.Contracts.v1.Tokens.RefreshToken.RefreshTokenCommand                                                                        100%
+  FSH.Modules.Identity.Contracts.v1.Tokens.RefreshToken.RefreshTokenCommandResponse                                                                  0%
+  FSH.Modules.Identity.Contracts.v1.Tokens.TokenGeneration.GenerateTokenCommand                                                                    100%
+  FSH.Modules.Identity.Contracts.v1.Users.AssignUserRoles.AssignUserRolesCommand                                                                     0%
+  FSH.Modules.Identity.Contracts.v1.Users.AssignUserRoles.AssignUserRolesCommandResponse                                                             0%
+  FSH.Modules.Identity.Contracts.v1.Users.ChangePassword.ChangePasswordCommand                                                                       0%
+  FSH.Modules.Identity.Contracts.v1.Users.ConfirmEmail.ConfirmEmailCommand                                                                           0%
+  FSH.Modules.Identity.Contracts.v1.Users.DeleteUser.DeleteUserCommand                                                                               0%
+  FSH.Modules.Identity.Contracts.v1.Users.ForgotPassword.ForgotPasswordCommand                                                                       0%
+  FSH.Modules.Identity.Contracts.v1.Users.GetUser.GetUserQuery                                                                                       0%
+  FSH.Modules.Identity.Contracts.v1.Users.GetUserGroups.GetUserGroupsQuery                                                                           0%
+  FSH.Modules.Identity.Contracts.v1.Users.GetUserPermissions.GetCurrentUserPermissionsQuery                                                          0%
+  FSH.Modules.Identity.Contracts.v1.Users.GetUserProfile.GetCurrentUserProfileQuery                                                                  0%
+  FSH.Modules.Identity.Contracts.v1.Users.GetUserRoles.GetUserRolesQuery                                                                             0%
+  FSH.Modules.Identity.Contracts.v1.Users.RegisterUser.RegisterUserCommand                                                                           0%
+  FSH.Modules.Identity.Contracts.v1.Users.RegisterUser.RegisterUserResponse                                                                          0%
+  FSH.Modules.Identity.Contracts.v1.Users.ResetPassword.ResetPasswordCommand                                                                         0%
+  FSH.Modules.Identity.Contracts.v1.Users.SearchUsers.SearchUsersQuery                                                                             100%
+  FSH.Modules.Identity.Contracts.v1.Users.ToggleUserStatus.ToggleUserStatusCommand                                                                   0%
+  FSH.Modules.Identity.Contracts.v1.Users.UpdateUser.UpdateUserCommand                                                                               0%
+
+FSH.Modules.Multitenancy                                                                                                                           6.9%
+  FSH.Modules.Multitenancy.Data.Configurations.AppTenantInfoConfiguration                                                                            0%
+  FSH.Modules.Multitenancy.Data.Configurations.TenantProvisioningConfiguration                                                                       0%
+  FSH.Modules.Multitenancy.Data.Configurations.TenantProvisioningStepConfiguration                                                                   0%
+  FSH.Modules.Multitenancy.Data.Configurations.TenantThemeConfiguration                                                                              0%
+  FSH.Modules.Multitenancy.Data.TenantDbContext                                                                                                      0%
+  FSH.Modules.Multitenancy.Data.TenantDbContextFactory                                                                                               0%
+  FSH.Modules.Multitenancy.Domain.TenantTheme                                                                                                      100%
+  FSH.Modules.Multitenancy.Extensions                                                                                                                0%
+  FSH.Modules.Multitenancy.Features.v1.ChangeTenantActivation.ChangeTenantActivationCommandHandler                                                   0%
+  FSH.Modules.Multitenancy.Features.v1.ChangeTenantActivation.ChangeTenantActivationCommandValidator                                                 0%
+  FSH.Modules.Multitenancy.Features.v1.ChangeTenantActivation.ChangeTenantActivationEndpoint                                                         0%
+  FSH.Modules.Multitenancy.Features.v1.CreateTenant.CreateTenantCommandHandler                                                                       0%
+  FSH.Modules.Multitenancy.Features.v1.CreateTenant.CreateTenantCommandValidator                                                                     0%
+  FSH.Modules.Multitenancy.Features.v1.CreateTenant.CreateTenantEndpoint                                                                             0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenantMigrations.GetTenantMigrationsQueryHandler                                                           0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenantMigrations.TenantMigrationsEndpoint                                                                  0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenants.GetTenantsEndpoint                                                                                 0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenants.GetTenantsQueryHandler                                                                             0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenants.GetTenantsSpecification                                                                            0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenantStatus.GetTenantStatusEndpoint                                                                       0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenantStatus.GetTenantStatusQueryHandler                                                                   0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenantTheme.GetTenantThemeEndpoint                                                                         0%
+  FSH.Modules.Multitenancy.Features.v1.GetTenantTheme.GetTenantThemeQueryHandler                                                                     0%
+  FSH.Modules.Multitenancy.Features.v1.ResetTenantTheme.ResetTenantThemeCommandHandler                                                               0%
+  FSH.Modules.Multitenancy.Features.v1.ResetTenantTheme.ResetTenantThemeEndpoint                                                                     0%
+  FSH.Modules.Multitenancy.Features.v1.TenantProvisioning.GetTenantProvisioningStatus.GetTenantProvisioningStatusEndpoint                            0%
+  FSH.Modules.Multitenancy.Features.v1.TenantProvisioning.GetTenantProvisioningStatus.GetTenantProvisioningStatusQueryHandler                        0%
+  FSH.Modules.Multitenancy.Features.v1.TenantProvisioning.RetryTenantProvisioning.RetryTenantProvisioningCommandHandler                              0%
+  FSH.Modules.Multitenancy.Features.v1.TenantProvisioning.RetryTenantProvisioning.RetryTenantProvisioningEndpoint                                    0%
+  FSH.Modules.Multitenancy.Features.v1.UpdateTenantTheme.UpdateTenantThemeCommandHandler                                                             0%
+  FSH.Modules.Multitenancy.Features.v1.UpdateTenantTheme.UpdateTenantThemeCommandValidator                                                           0%
+  FSH.Modules.Multitenancy.Features.v1.UpdateTenantTheme.UpdateTenantThemeEndpoint                                                                   0%
+  FSH.Modules.Multitenancy.Features.v1.UpgradeTenant.UpgradeTenantCommandHandler                                                                     0%
+  FSH.Modules.Multitenancy.Features.v1.UpgradeTenant.UpgradeTenantCommandValidator                                                                   0%
+  FSH.Modules.Multitenancy.Features.v1.UpgradeTenant.UpgradeTenantEndpoint                                                                           0%
+  FSH.Modules.Multitenancy.MultitenancyModule                                                                                                        0%
+  FSH.Modules.Multitenancy.MultitenancyOptions                                                                                                     100%
+  FSH.Modules.Multitenancy.Provisioning.TenantAutoProvisioningHostedService                                                                          0%
+  FSH.Modules.Multitenancy.Provisioning.TenantProvisioning                                                                                        92.1%
+  FSH.Modules.Multitenancy.Provisioning.TenantProvisioningJob                                                                                        0%
+  FSH.Modules.Multitenancy.Provisioning.TenantProvisioningService                                                                                    0%
+  FSH.Modules.Multitenancy.Provisioning.TenantProvisioningStep                                                                                    86.2%
+  FSH.Modules.Multitenancy.Provisioning.TenantStoreInitializerHostedService                                                                          0%
+  FSH.Modules.Multitenancy.Services.TenantService                                                                                                    0%
+  FSH.Modules.Multitenancy.Services.TenantThemeService                                                                                               0%
+  FSH.Modules.Multitenancy.TenantMigrationsHealthCheck                                                                                               0%
+  Microsoft.AspNetCore.OpenApi.Generated                                                                                                             0%
+  System.Runtime.CompilerServices                                                                                                                    0%
+  System.Text.RegularExpressions.Generated                                                                                                           0%
+  System.Text.RegularExpressions.Generated.<RegexGenerator_g>F6CAC05BAADEF2F452E05A0705C3AD94010A6C5722F8C4C1F0FDFC4AF0EBCDC6B__HexColorRegex_0      0%
+
+FSH.Modules.Multitenancy.Contracts                                                                                                                   0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.BrandAssetsDto                                                                                             0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.LayoutDto                                                                                                  0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.PaletteDto                                                                                                 0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TenantDto                                                                                                  0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TenantLifecycleResultDto                                                                                   0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TenantMigrationStatusDto                                                                                   0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TenantProvisioningStatusDto                                                                                0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TenantProvisioningStepDto                                                                                  0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TenantStatusDto                                                                                            0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TenantThemeDto                                                                                             0%
+  FSH.Modules.Multitenancy.Contracts.Dtos.TypographyDto                                                                                              0%
+  FSH.Modules.Multitenancy.Contracts.Options.BrandAssetsReadDto                                                                                      0%
+  FSH.Modules.Multitenancy.Contracts.Options.TenantThemeOptions                                                                                      0%
+  FSH.Modules.Multitenancy.Contracts.v1.ChangeTenantActivation.ChangeTenantActivationCommand                                                         0%
+  FSH.Modules.Multitenancy.Contracts.v1.CreateTenant.CreateTenantCommand                                                                             0%
+  FSH.Modules.Multitenancy.Contracts.v1.CreateTenant.CreateTenantCommandResponse                                                                     0%
+  FSH.Modules.Multitenancy.Contracts.v1.GetTenants.GetTenantsQuery                                                                                   0%
+  FSH.Modules.Multitenancy.Contracts.v1.GetTenantStatus.GetTenantStatusQuery                                                                         0%
+  FSH.Modules.Multitenancy.Contracts.v1.TenantProvisioning.GetTenantProvisioningStatusQuery                                                          0%
+  FSH.Modules.Multitenancy.Contracts.v1.TenantProvisioning.RetryTenantProvisioningCommand                                                            0%
+  FSH.Modules.Multitenancy.Contracts.v1.UpdateTenantTheme.UpdateTenantThemeCommand                                                                   0%
+  FSH.Modules.Multitenancy.Contracts.v1.UpgradeTenant.UpgradeTenantCommand                                                                           0%
+  FSH.Modules.Multitenancy.Contracts.v1.UpgradeTenant.UpgradeTenantCommandResponse                                                                   0%
+
+FSH.Playground.Migrations.PostgreSQL                                                                                                                 0%
+  FSH.Playground.Migrations.PostgreSQL.Audit.AddAudits                                                                                               0%
+  FSH.Playground.Migrations.PostgreSQL.Audit.AuditDbContextModelSnapshot                                                                             0%
+  FSH.Playground.Migrations.PostgreSQL.Identity.IdentityDbContextModelSnapshot                                                                       0%
+  FSH.Playground.Migrations.PostgreSQL.Identity.Initial                                                                                              0%
+  FSH.Playground.Migrations.PostgreSQL.Identity.SessionManagement                                                                                    0%
+  FSH.Playground.Migrations.PostgreSQL.Identity.UserGroups                                                                                           0%
+  FSH.Playground.Migrations.PostgreSQL.MultiTenancy.AddMultitenancy                                                                                  0%
+  FSH.Playground.Migrations.PostgreSQL.MultiTenancy.AddTenantTheme                                                                                   0%
+  FSH.Playground.Migrations.PostgreSQL.MultiTenancy.IncreaseTenantThemeUrlLength                                                                     0%
+  FSH.Playground.Migrations.PostgreSQL.MultiTenancy.TenantDbContextModelSnapshot                                                                     0%
+  FSH.Playground.Migrations.PostgreSQL.MultiTenancy.UpdateMultitenancy                                                                               0%
+  Microsoft.AspNetCore.OpenApi.Generated                                                                                                             0%
+  System.Runtime.CompilerServices                                                                                                                    0%

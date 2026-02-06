@@ -1,0 +1,262 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g., 10.0.0-rc.1)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore src/FSH.Framework.slnx
+
+      - name: Build
+        run: dotnet build src/FSH.Framework.slnx -c Release --no-restore
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            src/**/bin/Release
+            src/**/obj/Release
+          retention-days: 1
+
+  test:
+    name: Test - ${{ matrix.test-project.name }}
+    runs-on: ubuntu-latest
+    needs: build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-project:
+          - name: Architecture.Tests
+            path: src/Tests/Architecture.Tests
+          - name: Auditing.Tests
+            path: src/Tests/Auditing.Tests
+          - name: Generic.Tests
+            path: src/Tests/Generic.Tests
+          - name: Identity.Tests
+            path: src/Tests/Identity.Tests
+          - name: Multitenancy.Tests
+            path: src/Tests/Multitenancy.Tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: src
+
+      - name: Run ${{ matrix.test-project.name }}
+        run: dotnet test ${{ matrix.test-project.path }} -c Release --no-build --verbosity normal
+
+  publish-dev-containers:
+    name: Publish Dev Containers
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish API container image
+        run: |
+          dotnet publish src/Playground/Playground.Api/Playground.Api.csproj \
+            -c Release -r linux-x64 \
+            -p:PublishProfile=DefaultContainer \
+            -p:ContainerRepository=ghcr.io/${{ github.repository_owner }}/fsh-playground-api \
+            -p:ContainerImageTags='"dev-${{ github.sha }};dev-latest"'
+
+      - name: Publish Blazor container image
+        run: |
+          dotnet publish src/Playground/Playground.Blazor/Playground.Blazor.csproj \
+            -c Release -r linux-x64 \
+            -p:PublishProfile=DefaultContainer \
+            -p:ContainerRepository=ghcr.io/${{ github.repository_owner }}/fsh-playground-blazor \
+            -p:ContainerImageTags='"dev-${{ github.sha }};dev-latest"'
+
+      - name: Push containers to GHCR
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-api:dev-${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-api:dev-latest
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-blazor:dev-${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-blazor:dev-latest
+
+  publish-release:
+    name: Publish Release (NuGet + Containers)
+    runs-on: ubuntu-latest
+    needs: test
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch') ||
+      startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            echo "No version specified and not a tag push"
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Restore and Build with version
+        run: |
+          dotnet restore src/FSH.Framework.slnx
+          dotnet build src/FSH.Framework.slnx -c Release --no-restore -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Pack BuildingBlocks
+        run: |
+          dotnet pack src/BuildingBlocks/Core/Core.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Shared/Shared.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Persistence/Persistence.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Caching/Caching.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Mailing/Mailing.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Jobs/Jobs.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Storage/Storage.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Eventing/Eventing.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Web/Web.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/BuildingBlocks/Blazor.UI/Blazor.UI.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+
+      - name: Pack Modules
+        run: |
+          dotnet pack src/Modules/Auditing/Modules.Auditing.Contracts/Modules.Auditing.Contracts.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/Modules/Auditing/Modules.Auditing/Modules.Auditing.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/Modules/Identity/Modules.Identity.Contracts/Modules.Identity.Contracts.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/Modules/Identity/Modules.Identity/Modules.Identity.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/Modules/Multitenancy/Modules.Multitenancy.Contracts/Modules.Multitenancy.Contracts.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet pack src/Modules/Multitenancy/Modules.Multitenancy/Modules.Multitenancy.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+
+      - name: Pack CLI Tool
+        run: dotnet pack src/Tools/CLI/FSH.CLI.csproj -c Release --no-build -o ./nupkgs -p:PackageVersion=${{ steps.version.outputs.version }}
+
+      - name: Push to NuGet.org
+        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API container
+        run: |
+          dotnet publish src/Playground/Playground.Api/Playground.Api.csproj \
+            -c Release -r linux-x64 \
+            -p:PublishProfile=DefaultContainer \
+            -p:ContainerRepository=ghcr.io/${{ github.repository_owner }}/fsh-playground-api \
+            -p:ContainerImageTags='"${{ steps.version.outputs.version }};latest"'
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-api:${{ steps.version.outputs.version }}
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-api:latest
+
+      - name: Build and push Blazor container
+        run: |
+          dotnet publish src/Playground/Playground.Blazor/Playground.Blazor.csproj \
+            -c Release -r linux-x64 \
+            -p:PublishProfile=DefaultContainer \
+            -p:ContainerRepository=ghcr.io/${{ github.repository_owner }}/fsh-playground-blazor \
+            -p:ContainerImageTags='"${{ steps.version.outputs.version }};latest"'
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-blazor:${{ steps.version.outputs.version }}
+          docker push ghcr.io/${{ github.repository_owner }}/fsh-playground-blazor:latest

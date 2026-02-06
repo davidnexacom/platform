@@ -9,19 +9,19 @@ public interface ITenantService
 {
     Task<PagedResponse<TenantDto>> GetAllAsync(GetTenantsQuery query, CancellationToken cancellationToken);
 
-    Task<bool> ExistsWithIdAsync(string id);
+    Task<bool> ExistsWithIdAsync(string id, CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsWithNameAsync(string name);
+    Task<bool> ExistsWithNameAsync(string name, CancellationToken cancellationToken = default);
 
-    Task<TenantStatusDto> GetStatusAsync(string id);
+    Task<TenantStatusDto> GetStatusAsync(string id, CancellationToken cancellationToken = default);
 
     Task<string> CreateAsync(string id, string name, string? connectionString, string adminEmail, string? issuer, CancellationToken cancellationToken);
 
     Task<string> ActivateAsync(string id, CancellationToken cancellationToken);
 
-    Task<string> DeactivateAsync(string id);
+    Task<string> DeactivateAsync(string id, CancellationToken cancellationToken = default);
 
-    Task<DateTime> UpgradeSubscription(string id, DateTime extendedExpiryDate);
+    Task<DateTime> UpgradeSubscriptionAsync(string id, DateTime extendedExpiryDate, CancellationToken cancellationToken = default);
 
     Task MigrateTenantAsync(AppTenantInfo tenant, CancellationToken cancellationToken);
 

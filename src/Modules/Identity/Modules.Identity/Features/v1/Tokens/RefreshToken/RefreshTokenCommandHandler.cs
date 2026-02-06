@@ -1,8 +1,8 @@
+using FSH.Framework.Core.Context;
 using FSH.Modules.Auditing.Contracts;
 using FSH.Modules.Identity.Contracts.Services;
 using FSH.Modules.Identity.Contracts.v1.Tokens.RefreshToken;
 using Mediator;
-using Microsoft.AspNetCore.Http;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -14,20 +14,20 @@ public sealed class RefreshTokenCommandHandler
     private readonly IIdentityService _identityService;
     private readonly ITokenService _tokenService;
     private readonly ISecurityAudit _securityAudit;
-    private readonly IHttpContextAccessor _http;
+    private readonly IRequestContext _requestContext;
     private readonly ISessionService _sessionService;
 
     public RefreshTokenCommandHandler(
         IIdentityService identityService,
         ITokenService tokenService,
         ISecurityAudit securityAudit,
-        IHttpContextAccessor http,
+        IRequestContext requestContext,
         ISessionService sessionService)
     {
         _identityService = identityService;
         _tokenService = tokenService;
         _securityAudit = securityAudit;
-        _http = http;
+        _requestContext = requestContext;
         _sessionService = sessionService;
     }
 
@@ -37,9 +37,7 @@ public sealed class RefreshTokenCommandHandler
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var http = _http.HttpContext;
-        var clientId = http?.Request.Headers["X-Client-Id"].ToString();
-        if (string.IsNullOrWhiteSpace(clientId)) clientId = "web";
+        var clientId = _requestContext.ClientId;
 
         // Validate refresh token and rebuild subject + claims
         var validated = await _identityService

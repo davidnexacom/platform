@@ -2,31 +2,33 @@
 
 <PageTitle>@PageTitleText</PageTitle>
 
-<MudPaper Class="@CombinedClass" Elevation="@Elevation">
-    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap">
-        <MudStack Spacing="2">
-            <MudText Typo="@TitleTypo" Class="fw-700">@Title</MudText>
-            @if (!string.IsNullOrWhiteSpace(Description))
+<div class="fsh-page-header-wrapper">
+    <MudPaper Class="@CombinedClass" Elevation="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap">
+            <MudStack Spacing="1">
+                <MudText Typo="@TitleTypo" Class="fw-700">@Title</MudText>
+                @if (!string.IsNullOrWhiteSpace(Description))
+                {
+                    <MudText Typo="Typo.body2" Class="text-muted">
+                        @Description
+                    </MudText>
+                }
+                @if (DescriptionContent != null)
+                {
+                    <MudText Typo="Typo.body2" Class="text-muted">
+                        @DescriptionContent
+                    </MudText>
+                }
+            </MudStack>
+            @if (ActionContent != null)
             {
-                <MudText Typo="Typo.body1" Class="text-muted">
-                    @Description
-                </MudText>
-            }
-            @if (DescriptionContent != null)
-            {
-                <MudText Typo="Typo.body1" Class="text-muted">
-                    @DescriptionContent
-                </MudText>
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                    @ActionContent
+                </MudStack>
             }
         </MudStack>
-        @if (ActionContent != null)
-        {
-            <MudStack Row="true" Spacing="2">
-                @ActionContent
-            </MudStack>
-        }
-    </MudStack>
-</MudPaper>
+    </MudPaper>
+</div>
 
 @code {
     /// <summary>
@@ -54,16 +56,10 @@
     public RenderFragment? ActionContent { get; set; }
 
     /// <summary>
-    /// Typography style for the title. Default is h4.
+    /// Typography style for the title. Default is h5.
     /// </summary>
     [Parameter]
-    public Typo TitleTypo { get; set; } = Typo.h4;
-
-    /// <summary>
-    /// Elevation of the paper component. Default is 0.
-    /// </summary>
-    [Parameter]
-    public int Elevation { get; set; } = 0;
+    public Typo TitleTypo { get; set; } = Typo.h5;
 
     /// <summary>
     /// Additional CSS classes to apply
@@ -92,7 +88,7 @@
     {
         get
         {
-            var baseClass = "hero-card pa-6 mb-4";
+            var baseClass = "fsh-page-header pa-5 mb-4";
             return string.IsNullOrWhiteSpace(Class) ? baseClass : $"{baseClass} {Class}";
         }
     }

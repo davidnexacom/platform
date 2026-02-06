@@ -2,10 +2,9 @@
 using FSH.Framework.Core.Context;
 using FSH.Framework.Eventing;
 using FSH.Framework.Eventing.Outbox;
-using FSH.Framework.Identity.v1.Tokens.RefreshToken;
-using FSH.Framework.Identity.v1.Tokens.TokenGeneration;
-using FSH.Framework.Infrastructure.Identity.Users.Endpoints;
-using FSH.Framework.Infrastructure.Identity.Users.Services;
+using FSH.Modules.Identity.Features.v1.Tokens.RefreshToken;
+using FSH.Modules.Identity.Features.v1.Tokens.TokenGeneration;
+using FSH.Modules.Identity.Features.v1.Users.SelfRegistration;
 using FSH.Framework.Persistence;
 using FSH.Framework.Shared.Constants;
 using FSH.Framework.Storage.Local;
@@ -16,6 +15,7 @@ using FSH.Modules.Identity.Authorization;
 using FSH.Modules.Identity.Authorization.Jwt;
 using FSH.Modules.Identity.Contracts.Services;
 using FSH.Modules.Identity.Data;
+using FSH.Modules.Identity.Domain;
 using FSH.Modules.Identity.Features.v1.Roles;
 using FSH.Modules.Identity.Features.v1.Roles.DeleteRole;
 using FSH.Modules.Identity.Features.v1.Roles.GetRoleById;
@@ -23,8 +23,11 @@ using FSH.Modules.Identity.Features.v1.Roles.GetRoles;
 using FSH.Modules.Identity.Features.v1.Roles.GetRoleWithPermissions;
 using FSH.Modules.Identity.Features.v1.Roles.UpdateRolePermissions;
 using FSH.Modules.Identity.Features.v1.Roles.UpsertRole;
+<<<<<<< HEAD
 using FSH.Modules.Identity.Features.v1.Users;
 using FSH.Modules.Identity.Features.v1.Users.AdminConfirmEmail;
+=======
+>>>>>>> develop
 using FSH.Modules.Identity.Features.v1.Users.AssignUserRoles;
 using FSH.Modules.Identity.Features.v1.Users.ChangePassword;
 using FSH.Modules.Identity.Features.v1.Users.ConfirmEmail;
@@ -45,7 +48,19 @@ using FSH.Modules.Identity.Features.v1.Sessions.RevokeAllSessions;
 using FSH.Modules.Identity.Features.v1.Sessions.GetUserSessions;
 using FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeSession;
 using FSH.Modules.Identity.Features.v1.Sessions.AdminRevokeAllSessions;
+<<<<<<< HEAD
 using FSH.Modules.Identity.Features.v1.Tokens.Impersonation;
+=======
+using FSH.Modules.Identity.Features.v1.Groups.CreateGroup;
+using FSH.Modules.Identity.Features.v1.Groups.UpdateGroup;
+using FSH.Modules.Identity.Features.v1.Groups.DeleteGroup;
+using FSH.Modules.Identity.Features.v1.Groups.GetGroups;
+using FSH.Modules.Identity.Features.v1.Groups.GetGroupById;
+using FSH.Modules.Identity.Features.v1.Groups.GetGroupMembers;
+using FSH.Modules.Identity.Features.v1.Groups.AddUsersToGroup;
+using FSH.Modules.Identity.Features.v1.Groups.RemoveUserFromGroup;
+using FSH.Modules.Identity.Features.v1.Users.GetUserGroups;
+>>>>>>> develop
 using FSH.Modules.Identity.Services;
 using Hangfire;
 using Hangfire.Common;
@@ -72,10 +87,24 @@ public class IdentityModule : IModule
 
         var services = builder.Services;
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
-        services.AddScoped<ICurrentUser, CurrentUserService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<ICurrentUserService>());
+        services.AddScoped<ICurrentUserInitializer>(sp => sp.GetRequiredService<ICurrentUserService>());
+        services.AddScoped<IRequestContextService, RequestContextService>();
+        services.AddScoped<IRequestContext>(sp => sp.GetRequiredService<IRequestContextService>());
         services.AddScoped<ITokenService, TokenService>();
-        services.AddScoped(sp => (ICurrentUserInitializer)sp.GetRequiredService<ICurrentUser>());
+
+        // User services - focused single-responsibility services
+        services.AddTransient<IUserRegistrationService, UserRegistrationService>();
+        services.AddTransient<IUserProfileService, UserProfileService>();
+        services.AddTransient<IUserStatusService, UserStatusService>();
+        services.AddTransient<IUserRoleService, UserRoleService>();
+        services.AddTransient<IUserPasswordService, UserPasswordService>();
+        services.AddTransient<IUserPermissionService, UserPermissionService>();
+
+        // Facade for backward compatibility
         services.AddTransient<IUserService, UserService>();
+
         services.AddTransient<IRoleService, RoleService>();
         services.AddHeroStorage(builder.Configuration);
         services.AddScoped<IIdentityService, IdentityService>();
@@ -99,8 +128,12 @@ public class IdentityModule : IModule
         // Register password expiry service
         services.AddScoped<IPasswordExpiryService, PasswordExpiryService>();
 
-        // Register session service
+        // Register session service and background cleanup
         services.AddScoped<ISessionService, SessionService>();
+        services.AddHostedService<SessionCleanupHostedService>();
+
+        // Register group role service for group-derived permissions
+        services.AddScoped<IGroupRoleService, GroupRoleService>();
 
         services.AddIdentity<FshUser, FshRole>(options =>
         {
@@ -176,7 +209,7 @@ public class IdentityModule : IModule
         group.MapRegisterUserEndpoint();
         group.MapResetPasswordEndpoint();
         group.MapSelfRegisterUserEndpoint();
-        group.ToggleUserStatusEndpointEndpoint();
+        group.MapToggleUserStatusEndpoint();
         group.MapUpdateUserEndpoint();
 
         // sessions - user endpoints
@@ -188,5 +221,18 @@ public class IdentityModule : IModule
         group.MapGetUserSessionsEndpoint();
         group.MapAdminRevokeSessionEndpoint();
         group.MapAdminRevokeAllSessionsEndpoint();
+
+        // groups
+        group.MapGetGroupsEndpoint();
+        group.MapGetGroupByIdEndpoint();
+        group.MapCreateGroupEndpoint();
+        group.MapUpdateGroupEndpoint();
+        group.MapDeleteGroupEndpoint();
+        group.MapGetGroupMembersEndpoint();
+        group.MapAddUsersToGroupEndpoint();
+        group.MapRemoveUserFromGroupEndpoint();
+
+        // user groups
+        group.MapGetUserGroupsEndpoint();
     }
 }

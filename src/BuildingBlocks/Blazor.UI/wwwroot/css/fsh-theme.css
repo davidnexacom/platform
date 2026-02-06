@@ -1,6 +1,28 @@
 :root {
+  /* Border Radius */
   --fsh-radius: 10px;
+  --fsh-radius-sm: 8px;
+  --fsh-radius-lg: 16px;
+  --fsh-radius-xl: 20px;
+  --fsh-radius-full: 9999px;
+
+  /* Shadows */
   --fsh-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  --fsh-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --fsh-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --fsh-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+
+  /* Card Styling */
+  --fsh-card-bg: #ffffff;
+  --fsh-card-border: rgba(0, 0, 0, 0.08);
+  --fsh-card-shadow: var(--fsh-shadow-md);
+
+  /* Text Colors */
+  --fsh-text-primary: #1a1a2e;
+  --fsh-text-secondary: #64748b;
+
+  /* Transitions */
+  --fsh-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fsh-card {
@@ -28,6 +50,31 @@
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(var(--mud-palette-primary-rgb), 0.1), rgba(var(--mud-palette-info-rgb), 0.05));
   border-left: 4px solid var(--mud-palette-primary);
+}
+
+/* ===== FshPageHeader Styles ===== */
+.fsh-page-header {
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(var(--mud-palette-primary-rgb), 0.06) 0%, rgba(var(--mud-palette-surface-rgb), 1) 100%);
+  border-left: 3px solid var(--mud-palette-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.fsh-page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 100%;
+  background: linear-gradient(135deg, transparent 0%, rgba(var(--mud-palette-primary-rgb), 0.03) 100%);
+  pointer-events: none;
+}
+
+/* Dark mode support */
+.mud-theme-dark .fsh-page-header {
+  background: linear-gradient(135deg, rgba(var(--mud-palette-primary-rgb), 0.08) 0%, rgba(30, 30, 45, 1) 100%);
 }
 
 .fw-600 {
@@ -333,3 +380,5 @@
 #nav-drawer {
   border-right: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
+
+/* FshStatCard styles are in the component's scoped CSS */

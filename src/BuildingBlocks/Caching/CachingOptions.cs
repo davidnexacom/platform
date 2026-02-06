@@ -5,6 +5,12 @@ public sealed class CachingOptions
     /// <summary>Redis connection string. If empty, falls back to in-memory.</summary>
     public string Redis { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Enable SSL for Redis connection. If null, uses connection string default.
+    /// Set to true when using Aspire or cloud Redis that requires SSL.
+    /// </summary>
+    public bool? EnableSsl { get; set; }
+
     /// <summary>Default sliding expiration if caller doesn't specify.</summary>
     public TimeSpan? DefaultSlidingExpiration { get; set; } = TimeSpan.FromMinutes(5);
 

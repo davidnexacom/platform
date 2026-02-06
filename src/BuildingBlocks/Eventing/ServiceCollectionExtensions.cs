@@ -2,6 +2,7 @@ using FSH.Framework.Eventing.Abstractions;
 using FSH.Framework.Eventing.Inbox;
 using FSH.Framework.Eventing.InMemory;
 using FSH.Framework.Eventing.Outbox;
+using FSH.Framework.Eventing.RabbitMq;
 using FSH.Framework.Eventing.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,8 +27,25 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IEventSerializer, JsonEventSerializer>();
 
-        // For now, only InMemory provider is implemented.
-        services.AddSingleton<IEventBus, InMemoryEventBus>();
+        // Register event bus based on configured provider
+        var options = configuration.GetSection(nameof(EventingOptions)).Get<EventingOptions>() ?? new EventingOptions();
+
+        if (string.Equals(options.Provider, "RabbitMQ", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddOptions<RabbitMqOptions>().BindConfiguration("EventingOptions:RabbitMQ");
+            services.AddSingleton<IEventBus, RabbitMqEventBus>();
+        }
+        else
+        {
+            // Default to InMemory
+            services.AddSingleton<IEventBus, InMemoryEventBus>();
+        }
+
+        // Register outbox dispatcher hosted service if enabled
+        if (options.UseHostedServiceDispatcher)
+        {
+            services.AddHostedService<OutboxDispatcherHostedService>();
+        }
 
         return services;
     }

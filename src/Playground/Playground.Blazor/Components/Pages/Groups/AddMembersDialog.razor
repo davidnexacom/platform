@@ -1,0 +1,250 @@
+@using FSH.Playground.Blazor.ApiClient
+@inject IIdentityClient IdentityClient
+@inject IGroupsClient GroupsClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h6" Class="fw-600">Add Members to Group</MudText>
+            <MudText Typo="Typo.caption" Class="text-muted">
+                Select users to add to this group
+            </MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="4" Class="mt-2">
+            @* Search *@
+            <MudTextField @bind-Value="_searchTerm"
+                          Label="Search Users"
+                          Placeholder="Search by name or email..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          DebounceInterval="300"
+                          OnDebounceIntervalElapsed="@((string _) => FilterUsers())" />
+
+            @* User Selection *@
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (_filteredUsers.Any())
+            {
+                <MudPaper Class="pa-0" Variant="Variant.Outlined" Style="max-height: 400px; overflow-y: auto;">
+                    <MudList T="string" Dense="true">
+                        @foreach (var user in _filteredUsers)
+                        {
+                            var isSelected = _selectedUserIds.Contains(user.Id!);
+                            var isExisting = ExistingMemberIds.Contains(user.Id!);
+
+                            <MudListItem T="string"
+                                         Class="@(isExisting ? "mud-disabled" : "")"
+                                         OnClick="@(() => ToggleUser(user.Id!, isExisting))">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudCheckBox T="bool"
+                                                     Value="@isSelected"
+                                                     Disabled="@isExisting"
+                                                     Color="Color.Primary" />
+                                        <MudAvatar Size="Size.Small" Class="user-avatar">
+                                            @GetInitials(user)
+                                        </MudAvatar>
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2" Class="fw-600">
+                                                @($"{user.FirstName} {user.LastName}".Trim())
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Class="text-muted">@user.Email</MudText>
+                                        </MudStack>
+                                    </MudStack>
+                                    @if (isExisting)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success">
+                                            Already member
+                                        </MudChip>
+                                    }
+                                </MudStack>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudPaper>
+
+                @if (_selectedUserIds.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                        @_selectedUserIds.Count user(s) selected
+                    </MudAlert>
+                }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                    No users found matching your search.
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   OnClick="Cancel"
+                   Disabled="_busy">
+            Cancel
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="Submit"
+                   Disabled="@(_busy || !_selectedUserIds.Any())"
+                   StartIcon="@(_busy ? null : Icons.Material.Filled.PersonAdd)">
+            @if (_busy)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Adding...</span>
+            }
+            else
+            {
+                <span>Add @_selectedUserIds.Count Member(s)</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+        font-weight: 600;
+        background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary));
+        color: white;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    [Parameter]
+    public List<string> ExistingMemberIds { get; set; } = new();
+
+    private List<UserDto> _users = new();
+    private List<UserDto> _filteredUsers = new();
+    private HashSet<string> _selectedUserIds = new();
+    private string _searchTerm = string.Empty;
+    private bool _loading = true;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _loading = true;
+        try
+        {
+            var result = await IdentityClient.UsersGetAsync();
+            _users = result?.Where(u => u.IsActive).ToList() ?? new List<UserDto>();
+            FilterUsers();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load users: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void FilterUsers()
+    {
+        if (string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            _filteredUsers = _users;
+        }
+        else
+        {
+            var term = _searchTerm.ToLowerInvariant();
+            _filteredUsers = _users.Where(u =>
+                (u.FirstName?.ToLowerInvariant().Contains(term) ?? false) ||
+                (u.LastName?.ToLowerInvariant().Contains(term) ?? false) ||
+                (u.Email?.ToLowerInvariant().Contains(term) ?? false) ||
+                (u.UserName?.ToLowerInvariant().Contains(term) ?? false)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleUser(string userId, bool isExisting)
+    {
+        if (isExisting) return;
+
+        if (_selectedUserIds.Contains(userId))
+        {
+            _selectedUserIds.Remove(userId);
+        }
+        else
+        {
+            _selectedUserIds.Add(userId);
+        }
+        StateHasChanged();
+    }
+
+    private static string GetInitials(UserDto user)
+    {
+        var first = user.FirstName?.FirstOrDefault() ?? ' ';
+        var last = user.LastName?.FirstOrDefault() ?? ' ';
+        return $"{first}{last}".Trim().ToUpperInvariant();
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Submit()
+    {
+        if (!_selectedUserIds.Any())
+        {
+            Snackbar.Add("Please select at least one user.", Severity.Warning);
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var request = new AddUsersRequest
+            {
+                UserIds = _selectedUserIds.ToList()
+            };
+
+            var response = await GroupsClient.MembersPostAsync(GroupId, request);
+
+            if (response.AddedCount > 0)
+            {
+                Snackbar.Add($"Added {response.AddedCount} member(s) to the group.", Severity.Success);
+            }
+
+            if (response.AlreadyMemberUserIds?.Any() == true)
+            {
+                Snackbar.Add($"{response.AlreadyMemberUserIds.Count} user(s) were already members.", Severity.Info);
+            }
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to add members: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

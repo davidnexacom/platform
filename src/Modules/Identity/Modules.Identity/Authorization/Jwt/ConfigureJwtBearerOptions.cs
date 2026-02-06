@@ -1,6 +1,9 @@
 ﻿using FSH.Framework.Core.Exceptions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+<<<<<<< HEAD
 using Microsoft.AspNetCore.Authorization;
+=======
+>>>>>>> develop
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -59,6 +62,7 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
             OnChallenge = context =>
             {
                 context.HandleResponse();
+<<<<<<< HEAD
 
                 var path = context.HttpContext.Request.Path;
                 
@@ -83,20 +87,27 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
                 }
 
 
+=======
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = 401;
+                    context.Response.ContentType = "application/json";
+                    var result = System.Text.Json.JsonSerializer.Serialize(new { error = "Unauthorized" });
+                    return context.Response.WriteAsync(result);
+                }
+>>>>>>> develop
                 return Task.CompletedTask;
             },
             OnForbidden = _ => throw new ForbiddenException(),
             OnMessageReceived = context =>
             {
                 var accessToken = context.Request.Query["access_token"];
-
                 if (!string.IsNullOrEmpty(accessToken) &&
                     context.HttpContext.Request.Path.StartsWithSegments("/notifications", StringComparison.OrdinalIgnoreCase))
                 {
                     // Read the token out of the query string
                     context.Token = accessToken;
                 }
-
                 return Task.CompletedTask;
             }
         };

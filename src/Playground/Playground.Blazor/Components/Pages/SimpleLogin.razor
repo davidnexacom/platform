@@ -1,11 +1,14 @@
 @page "/login"
 @layout EmptyLayout
+@attribute [AllowAnonymous]
 @using FSH.Framework.Shared.Multitenancy
 @using FSH.Playground.Blazor.Services
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
 @inject IHttpClientFactory HttpClientFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IWebHostEnvironment Environment
 
 <PageTitle>Login</PageTitle>
 <div class="login-page">
@@ -78,7 +81,7 @@
                 <div class="form-group">
                     <div class="label-row">
                         <label class="form-label">Password</label>
-                        <a href="#" class="forgot-link">Forgot your password?</a>
+                        <a href="/forgot-password" class="forgot-link">Forgot your password?</a>
                     </div>
                     <input type="@(_showPassword ? "text" : "password")"
                            name="Password"
@@ -95,7 +98,7 @@
 
                 @* Sign Up Link *@
                 <p class="signup-text">
-                    Don't have an account? <a href="#" class="signup-link">Sign up</a>
+                    Don't have an account? <a href="/register" class="signup-link">Sign up</a>
                 </p>
             </form>
         </div>
@@ -108,13 +111,22 @@
 </div>
 
 @code {
-    private string _tenant = "root";
-    private string _email = MultitenancyConstants.Root.EmailAddress;
-    private string _password = MultitenancyConstants.DefaultPassword;
+    private string _tenant = string.Empty;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
     private bool _showPassword = false;
 
     protected override async Task OnInitializedAsync()
     {
+        // Only pre-fill default credentials in Development environment
+        // SECURITY: Never expose default credentials in production
+        if (Environment.IsDevelopment())
+        {
+            _tenant = "root";
+            _email = MultitenancyConstants.Root.EmailAddress;
+            _password = MultitenancyConstants.DefaultPassword;
+        }
+
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState.User.Identity?.IsAuthenticated == true)
         {

@@ -3,6 +3,7 @@
 @using System.Text
 @using System.Text.Json
 @using MudBlazor
+@using FSH.Framework.Blazor.UI.Components.Cards
 <!-- Hero Section -->
 <FshPageHeader Title="Audit Center"
                Description="Comprehensive audit trail with advanced analytics, filtering, and insights">
@@ -34,60 +35,32 @@
 {
     <MudGrid Class="mb-4" Spacing="3">
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="summary-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.Event" Color="Color.Primary" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">Total</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@GetTotalEvents()</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Total Events</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.Event"
+                         IconColor="Color.Primary"
+                         Value="@GetTotalEvents().ToString()"
+                         Label="Total Events"
+                         Badge="Total" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="summary-card error-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">Errors</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@GetEventsBySeverity("Error")</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Error Events</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.Error"
+                         IconColor="Color.Error"
+                         Value="@GetEventsBySeverity("Error").ToString()"
+                         Label="Error Events"
+                         Badge="Errors" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="summary-card warning-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Warning" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">Security</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@GetEventsByType("Security")</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Security Events</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.Security"
+                         IconColor="Color.Warning"
+                         Value="@GetEventsByType("Security").ToString()"
+                         Label="Security Events"
+                         Badge="Security" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="summary-card info-card" Elevation="2">
-                <MudCardContent Class="pa-4">
-                    <MudStack Spacing="2">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudIcon Icon="@Icons.Material.Filled.Source" Color="Color.Info" Size="Size.Large" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">Sources</MudChip>
-                        </MudStack>
-                        <MudText Typo="Typo.h4" Class="fw-700">@GetSourcesCount()</MudText>
-                        <MudText Typo="Typo.body2" Class="text-muted">Unique Sources</MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <FshStatCard Icon="@Icons.Material.Filled.Source"
+                         IconColor="Color.Info"
+                         Value="@GetSourcesCount().ToString()"
+                         Label="Unique Sources"
+                         Badge="Sources" />
         </MudItem>
     </MudGrid>
 }
@@ -725,16 +698,6 @@
         background: var(--mud-palette-background);
         min-height: 100vh;
     }
-
-    .summary-card {
-        border-radius: 12px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-        .summary-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-        }
 
     .filter-card {
         border-radius: 12px;

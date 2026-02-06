@@ -1,174 +1,114 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> FullStackHero .NET Starter Kit — AI Assistant Guidelines
 
-## Build & Run Commands
+## Quick Reference
 
 ```bash
-# Restore and build
-dotnet restore src/FSH.Framework.slnx
-dotnet build src/FSH.Framework.slnx
-
-# Run with Aspire (spins up Postgres + Redis via Docker)
-dotnet run --project src/Playground/FSH.Playground.AppHost
-
-# Run API standalone (requires DB/Redis/JWT config in appsettings)
-dotnet run --project src/Playground/Playground.Api
-
-# Run all tests
-dotnet test src/FSH.Framework.slnx
-
-# Run single test project
-dotnet test src/Tests/Architecture.Tests
-
-# Run specific test
-dotnet test src/Tests/Architecture.Tests --filter "FullyQualifiedName~TestMethodName"
-
-# Generate C# API client from OpenAPI spec (requires API running)
-./scripts/openapi/generate-api-clients.ps1 -SpecUrl "https://localhost:7030/openapi/v1.json"
-
-# Check for OpenAPI drift (CI validation)
-./scripts/openapi/check-openapi-drift.ps1 -SpecUrl "<spec-url>"
+dotnet build src/FSH.Framework.slnx     # Build (0 warnings required)
+dotnet test src/FSH.Framework.slnx      # Test
+dotnet run --project src/Playground/FSH.Playground.AppHost  # Run with Aspire
 ```
 
-## Architecture
+## Project Structure
 
-FullStackHero .NET 10 Starter Kit - multi-tenant SaaS framework using vertical slice architecture.
-
-### Repository Structure
-
-- **src/BuildingBlocks/** - Reusable framework components (packaged as NuGets): Core (DDD primitives), Persistence (EF Core + specifications), Caching (Redis), Mailing, Jobs (Hangfire), Storage, Web (host wiring), Eventing
-- **src/Modules/** - Feature modules (packaged as NuGets): Identity (JWT auth, users, roles), Multitenancy (Finbuckle), Auditing
-- **src/Playground/** - Reference implementation using direct project references for development; includes Aspire AppHost, API, Blazor UI, PostgreSQL migrations
-- **src/Tests/** - Architecture tests using NetArchTest.Rules, xUnit, Shouldly
-- **scripts/openapi/** - NSwag-based C# client generation from OpenAPI spec; outputs to `Playground.Blazor/ApiClient/Generated.cs`
-- **terraform/** - AWS infrastructure as code (modular)
-  - `modules/` - Reusable: network, ecs_cluster, ecs_service, rds_postgres, elasticache_redis, alb, s3_bucket
-  - `apps/playground/` - Playground deployment stack with `envs/{dev,staging,prod}/{region}/`
-  - `bootstrap/` - Initial AWS setup (S3 backend, etc.)
-
-### Module Pattern
-
-Each module implements `IModule` with:
-- `ConfigureServices(IHostApplicationBuilder)` - DI registration
-- `MapEndpoints(IEndpointRouteBuilder)` - Minimal API endpoint mapping
-
-Feature structure within modules:
 ```
-Features/v1/{Feature}/
-├── {Feature}Command.cs (or Query)
-├── {Feature}Handler.cs
-├── {Feature}Validator.cs (FluentValidation)
-└── {Feature}Endpoint.cs (static extension method on IEndpointRouteBuilder)
+src/
+├── BuildingBlocks/     # Framework core (⚠️ don't modify without approval)
+├── Modules/            # Business modules — add features here
+│   ├── Identity/       # Auth, users, roles, permissions
+│   ├── Multitenancy/   # Tenant management
+│   └── Auditing/       # Audit logging
+├── Playground/         # Reference application
+└── Tests/              # Architecture + unit tests
 ```
 
-Contracts projects (`Modules.{Name}.Contracts/`) contain public DTOs shareable with clients.
+## The Pattern
 
-### Endpoint Pattern
+Every feature = vertical slice in one folder:
 
-Endpoints are static extension methods returning `RouteHandlerBuilder`:
+```
+Modules/{Module}/Features/v1/{Feature}/
+├── {Action}{Entity}Command.cs      # ICommand<T> (NOT IRequest!)
+├── {Action}{Entity}Handler.cs      # ICommandHandler<T,R> returns ValueTask
+├── {Action}{Entity}Validator.cs    # AbstractValidator<T>
+└── {Action}{Entity}Endpoint.cs     # MapPost/Get/Put/Delete
+```
+
+## Critical Rules
+
+| Rule | Why |
+|------|-----|
+| Use `Mediator` not `MediatR` | Different library, different interfaces |
+| `ICommand<T>` / `IQuery<T>` | NOT `IRequest<T>` |
+| `ValueTask<T>` return type | NOT `Task<T>` |
+| DTOs in Contracts project | Keep internals internal |
+| Every command needs validator | No unvalidated input |
+| `.RequirePermission()` on endpoints | Explicit authorization |
+| Zero build warnings | CI enforces this |
+
+## Available Skills
+
+| Skill | When to Use |
+|-------|-------------|
+| `/add-feature` | Creating new API endpoints |
+| `/add-module` | Creating new bounded contexts |
+| `/add-entity` | Adding domain entities |
+| `/query-patterns` | Implementing GET with pagination/filtering |
+| `/testing-guide` | Writing tests |
+
+## Available Agents
+
+| Agent | Purpose |
+|-------|---------|
+| `code-reviewer` | Review changes against FSH patterns |
+| `feature-scaffolder` | Generate complete feature files |
+| `module-creator` | Scaffold new modules |
+| `architecture-guard` | Verify architectural integrity |
+| `migration-helper` | Handle EF Core migrations |
+
+## Quick Patterns
+
+### Command + Handler
 ```csharp
-public static RouteHandlerBuilder MapXxxEndpoint(this IEndpointRouteBuilder endpoint)
+public sealed record CreateUserCommand(string Email) : ICommand<Guid>;
+
+public sealed class CreateUserHandler(IRepository<User> repo) 
+    : ICommandHandler<CreateUserCommand, Guid>
 {
-    return endpoint.MapPost("/path", async (..., IMediator mediator, CancellationToken ct) =>
+    public async ValueTask<Guid> Handle(CreateUserCommand cmd, CancellationToken ct)
     {
-        var result = await mediator.Send(command, ct);
-        return TypedResults.Ok(result);
-    });
+        var user = User.Create(cmd.Email);
+        await repo.AddAsync(user, ct);
+        return user.Id;
+    }
 }
 ```
 
-### Platform Wiring
-
-In `Program.cs`:
-1. Register Mediator with command/query assemblies
-2. Call `builder.AddHeroPlatform(...)` - enables auth, OpenAPI, caching, mailing, jobs, health, OTel
-3. Call `builder.AddModules(moduleAssemblies)` to load modules
-4. Call `app.UseHeroMultiTenantDatabases()` for tenant DB migrations
-5. Call `app.UseHeroPlatform(p => p.MapModules = true)` to wire endpoints
-
-## Configuration
-
-Key settings (appsettings or env vars):
-- `DatabaseOptions:Provider` - postgres or mssql
-- `DatabaseOptions:ConnectionString` - Primary database
-- `CachingOptions:Redis` - Redis connection
-- `JwtOptions:SigningKey` - Required in production
-
-## Code Standards
-
-- .NET 10, C# latest, nullable enabled
-- SonarAnalyzer.CSharp with code style enforced in build
-- API versioning in URL path (`/api/v1/...`)
-- Mediator library (not MediatR) for commands/queries
-- FluentValidation for request validation
-
-## Blazor UI Components
-
-The framework provides reusable Blazor components in `BuildingBlocks/Blazor.UI/Components/` with consistent styling.
-
-### FshPageHeader Component
-
-Use `FshPageHeader` for consistent page headers across Playground.Blazor:
-
-```razor
-@using FSH.BuildingBlocks.Blazor.UI.Components.Page
-
-<FshPageHeader Title="Page Title"
-               Description="Optional description text">
-    <ActionContent>
-        <!-- Optional action buttons/controls -->
-        <MudButton>Action</MudButton>
-    </ActionContent>
-</FshPageHeader>
+### Endpoint
+```csharp
+public static RouteHandlerBuilder Map(this IEndpointRouteBuilder e) =>
+    e.MapPost("/", async (CreateUserCommand cmd, IMediator m, CancellationToken ct) =>
+        TypedResults.Created($"/users/{await m.Send(cmd, ct)}"))
+    .WithName(nameof(CreateUserCommand))
+    .WithSummary("Create a new user")
+    .RequirePermission(IdentityPermissions.Users.Create);
 ```
 
-**Parameters:**
-- `Title` (required): Main page title
-- `Description` (optional): Description text below title
-- `DescriptionContent` (optional): RenderFragment for complex descriptions
-- `ActionContent` (optional): RenderFragment for action buttons on the right
-- `TitleTypo` (optional): Typography style (default: Typo.h4)
-- `Elevation` (optional): Paper elevation (default: 0)
-- `Class` (optional): Additional CSS classes
-
-**Styling:**
-- Uses `.hero-card` class from `fsh-theme.css`
-- Gradient background with primary color accent border
-- Shared utility classes: `.fw-600`, `.fw-700` for font weights
-
-### FshUserProfile Component
-
-Modern user profile dropdown for app bars/navbars with avatar, user info, and menu:
-
-```razor
-@using FSH.Framework.Blazor.UI.Components.User
-
-<FshUserProfile UserName="@userName"
-                UserEmail="@userEmail"
-                UserRole="@userRole"
-                AvatarUrl="@avatarUrl"
-                OnProfileClick="NavigateToProfile"
-                OnSettingsClick="NavigateToSettings"
-                OnLogoutClick="LogoutAsync" />
+### Validator
+```csharp
+public sealed class CreateUserValidator : AbstractValidator<CreateUserCommand>
+{
+    public CreateUserValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+    }
+}
 ```
 
-**Parameters:**
-- `UserName` (required): User's display name
-- `UserEmail` (optional): User's email address
-- `UserRole` (optional): User's role or title
-- `AvatarUrl` (optional): URL to user's avatar (shows initials if not provided)
-- `ShowUserName` (optional): Show username next to avatar (default: true, hidden on mobile)
-- `ShowUserInfo` (optional): Show user info in menu header (default: true)
-- `MenuItems` (optional): Custom RenderFragment for menu items (uses default Profile/Settings/Logout if not provided)
-- `OnProfileClick` (optional): Callback for Profile menu item
-- `OnSettingsClick` (optional): Callback for Settings menu item
-- `OnLogoutClick` (optional): Callback for Logout menu item
+## Before Committing
 
-**Features:**
-- Responsive design (hides username on mobile)
-- Avatar with initials fallback
-- Smooth hover animations and transitions
-- Gradient menu header with user info
-- Customizable menu items via RenderFragment
-- Scoped CSS for isolated styling
+```bash
+dotnet build src/FSH.Framework.slnx  # Must be 0 warnings
+dotnet test src/FSH.Framework.slnx   # All tests pass
+```

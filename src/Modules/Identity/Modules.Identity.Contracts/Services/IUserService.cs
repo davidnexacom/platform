@@ -1,4 +1,4 @@
-﻿using FSH.Framework.Storage.DTOs;
+﻿using FSH.Framework.Shared.Storage;
 using FSH.Modules.Identity.Contracts.DTOs;
 using System.Security.Claims;
 

@@ -1,0 +1,318 @@
+@page "/groups/{GroupId:guid}/members"
+@using FSH.Playground.Blazor.ApiClient
+@using FSH.Framework.Blazor.UI.Components.Dialogs
+@inherits ComponentBase
+@inject IIdentityClient IdentityClient
+@inject IGroupsClient GroupsClient
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<FshPageHeader Title="@($"Group Members - {_group?.Name ?? "Loading..."}")"
+               Description="@(_group?.Description ?? "Manage group membership")">
+    <ActionContent>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="@(() => Navigation.NavigateTo("/groups"))">
+            Back to Groups
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="ShowAddMembers">
+            Add Members
+        </MudButton>
+    </ActionContent>
+</FshPageHeader>
+
+@* Group Info Card *@
+@if (_group is not null)
+{
+    <MudCard Class="mb-4" Elevation="2">
+        <MudCardContent>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Spacing="1">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Large" Color="Color.Primary" />
+                        <MudText Typo="Typo.h5" Class="fw-700">@_group.Name</MudText>
+                        @if (_group.IsSystemGroup)
+                        {
+                            <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Outlined">
+                                System
+                            </MudChip>
+                        }
+                        @if (_group.IsDefault)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">
+                                Default
+                            </MudChip>
+                        }
+                    </MudStack>
+                    @if (!string.IsNullOrEmpty(_group.Description))
+                    {
+                        <MudText Typo="Typo.body2" Class="text-muted">@_group.Description</MudText>
+                    }
+                </MudStack>
+                <MudStack Row="true" Spacing="2">
+                    @if (_group.RoleNames?.Any() == true)
+                    {
+                        @foreach (var role in _group.RoleNames)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@GetRoleColor(role)">
+                                @role
+                            </MudChip>
+                        }
+                    }
+                </MudStack>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+}
+
+@* Members Grid *@
+<MudPaper Class="fsh-card pa-0" Style="overflow: hidden;">
+    <MudDataGrid T="GroupMemberDto"
+                 @ref="_dataGrid"
+                 Items="_members"
+                 Loading="_loading"
+                 Hover="true"
+                 Dense="true"
+                 Striped="true"
+                 SortMode="SortMode.Single"
+                 Filterable="false"
+                 RowsPerPage="@_pageSize"
+                 Class="members-datagrid">
+        <ToolBarContent>
+            <MudTextField @bind-Value="_searchTerm"
+                          Placeholder="Search members..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Small"
+                          Immediate="true"
+                          DebounceInterval="300"
+                          OnDebounceIntervalElapsed="@((string _) => FilterMembers())"
+                          Class="mt-0"
+                          Style="max-width: 300px;" />
+            <MudSpacer />
+            <MudText Typo="Typo.body2" Class="text-muted">
+                @_filteredMembers.Count member(s)
+            </MudText>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn Title="Member" Sortable="true" SortBy="@(x => $"{x.FirstName} {x.LastName}")">
+                <CellTemplate>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudAvatar Size="Size.Small" Class="member-avatar">
+                            @GetInitials(context.Item)
+                        </MudAvatar>
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body2" Class="fw-600">
+                                @($"{context.Item.FirstName} {context.Item.LastName}".Trim())
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="text-muted">@@@context.Item.UserName</MudText>
+                        </MudStack>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" />
+            <TemplateColumn Title="Added" Sortable="true" SortBy="@(x => x.AddedAt)">
+                <CellTemplate>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2">@context.Item.AddedAt.LocalDateTime.ToString("MMM d, yyyy")</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">by @(context.Item.AddedBy ?? "System")</MudText>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false" HeaderClass="text-right" CellClass="text-right">
+                <CellTemplate>
+                    <MudTooltip Text="Remove from group">
+                        <MudIconButton Icon="@Icons.Material.Filled.PersonRemove"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => RemoveMember(context.Item))"
+                                       Disabled="_busyUserId == context.Item.UserId" />
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="GroupMemberDto" PageSizeOptions="@_pageSizeOptions" />
+        </PagerContent>
+        <NoRecordsContent>
+            <MudStack AlignItems="AlignItems.Center" Spacing="4" Class="pa-8">
+                <MudIcon Icon="@Icons.Material.Filled.GroupOff" Size="Size.Large" Color="Color.Default" />
+                <MudText Typo="Typo.h6">No members in this group</MudText>
+                <MudText Typo="Typo.body2" Class="text-muted">Add members to get started.</MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="ShowAddMembers">
+                    Add Members
+                </MudButton>
+            </MudStack>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+<style>
+    .member-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+        font-weight: 600;
+        background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary));
+        color: white;
+    }
+
+    .members-datagrid .mud-table-head .mud-table-row .mud-table-cell {
+        font-weight: 600;
+        background-color: rgba(var(--mud-palette-primary-rgb), 0.04);
+    }
+
+    .members-datagrid .mud-table-row:hover {
+        background-color: rgba(var(--mud-palette-primary-rgb), 0.02);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private MudDataGrid<GroupMemberDto>? _dataGrid;
+    private GroupDto? _group;
+    private List<GroupMemberDto> _members = new();
+    private List<GroupMemberDto> _filteredMembers = new();
+    private bool _loading = true;
+    private string? _busyUserId;
+    private string _searchTerm = string.Empty;
+
+    private readonly int _pageSize = 10;
+    private readonly int[] _pageSizeOptions = { 5, 10, 25, 50 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroup();
+        await LoadMembers();
+    }
+
+    private async Task LoadGroup()
+    {
+        try
+        {
+            _group = await IdentityClient.GroupsGetAsync(GroupId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load group: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task LoadMembers()
+    {
+        _loading = true;
+        try
+        {
+            var result = await GroupsClient.MembersGetAsync(GroupId);
+            _members = result?.ToList() ?? new List<GroupMemberDto>();
+            FilterMembers();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load members: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void FilterMembers()
+    {
+        if (string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            _filteredMembers = _members;
+        }
+        else
+        {
+            var term = _searchTerm.ToLowerInvariant();
+            _filteredMembers = _members.Where(m =>
+                (m.FirstName?.ToLowerInvariant().Contains(term) ?? false) ||
+                (m.LastName?.ToLowerInvariant().Contains(term) ?? false) ||
+                (m.Email?.ToLowerInvariant().Contains(term) ?? false) ||
+                (m.UserName?.ToLowerInvariant().Contains(term) ?? false)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
+
+    private static string GetInitials(GroupMemberDto member)
+    {
+        var first = member.FirstName?.FirstOrDefault() ?? ' ';
+        var last = member.LastName?.FirstOrDefault() ?? ' ';
+        return $"{first}{last}".Trim().ToUpperInvariant();
+    }
+
+    private static Color GetRoleColor(string? roleName) => roleName?.ToLowerInvariant() switch
+    {
+        "admin" => Color.Error,
+        "administrator" => Color.Error,
+        "basic" => Color.Info,
+        _ => Color.Default
+    };
+
+    private async Task ShowAddMembers()
+    {
+        var parameters = new DialogParameters<AddMembersDialog>
+        {
+            { x => x.GroupId, GroupId },
+            { x => x.ExistingMemberIds, _members.Select(m => m.UserId).Where(id => id is not null).ToList()! }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true
+        };
+
+        var dialog = await DialogService.ShowAsync<AddMembersDialog>("Add Members", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadMembers();
+        }
+    }
+
+    private async Task RemoveMember(GroupMemberDto member)
+    {
+        if (string.IsNullOrWhiteSpace(member.UserId)) return;
+
+        var confirmed = await DialogService.ShowConfirmAsync(
+            "Remove Member",
+            $"Remove {member.FirstName} {member.LastName} from this group?",
+            "Remove",
+            "Cancel",
+            Color.Error);
+
+        if (!confirmed) return;
+
+        _busyUserId = member.UserId;
+        try
+        {
+            await GroupsClient.MembersDeleteAsync(GroupId, member.UserId);
+            Snackbar.Add($"{member.FirstName} {member.LastName} removed from group.", Severity.Success);
+            await LoadMembers();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to remove member: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busyUserId = null;
+        }
+    }
+}

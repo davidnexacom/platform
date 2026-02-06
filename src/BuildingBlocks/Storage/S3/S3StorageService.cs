@@ -1,10 +1,11 @@
 using Amazon.S3;
 using Amazon.S3.Model;
+using FSH.Framework.Shared.Storage;
 using FSH.Framework.Storage.DTOs;
 using FSH.Framework.Storage.Services;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 using System.Text.RegularExpressions;
 
 namespace FSH.Framework.Storage.S3;
@@ -14,6 +15,7 @@ internal sealed class S3StorageService : IStorageService
     private readonly IAmazonS3 _s3;
     private readonly S3StorageOptions _options;
     private readonly ILogger<S3StorageService> _logger;
+    private readonly FileExtensionContentTypeProvider _contentTypeProvider;
 
     private const string UploadBasePath = "uploads";
 
@@ -22,6 +24,7 @@ internal sealed class S3StorageService : IStorageService
         _s3 = s3;
         _options = options.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger;
+        _contentTypeProvider = new FileExtensionContentTypeProvider();
 
         if (string.IsNullOrWhiteSpace(_options.Bucket))
         {
@@ -80,6 +83,82 @@ internal sealed class S3StorageService : IStorageService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to delete S3 object {Path}", path);
+        }
+    }
+
+    public async Task<FileDownloadResponse?> DownloadAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            var key = NormalizeKey(path);
+            var request = new GetObjectRequest
+            {
+                BucketName = _options.Bucket,
+                Key = key
+            };
+
+            var response = await _s3.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
+            var fileName = Path.GetFileName(key);
+
+            // Use response ContentType if available, otherwise determine from extension
+            var contentType = response.Headers.ContentType;
+            if (string.IsNullOrWhiteSpace(contentType) && !_contentTypeProvider.TryGetContentType(fileName, out contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            return new FileDownloadResponse
+            {
+                Stream = response.ResponseStream,
+                ContentType = contentType!,
+                FileName = fileName,
+                ContentLength = response.ContentLength
+            };
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogDebug(ex, "S3 object not found: {Path}", path);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to download S3 object {Path}", path);
+            return null;
+        }
+    }
+
+    public async Task<bool> ExistsAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        try
+        {
+            var key = NormalizeKey(path);
+            var request = new GetObjectMetadataRequest
+            {
+                BucketName = _options.Bucket,
+                Key = key
+            };
+
+            await _s3.GetObjectMetadataAsync(request, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to check if S3 object exists: {Path}", path);
+            return false;
         }
     }
 

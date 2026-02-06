@@ -1,4 +1,5 @@
 using FluentValidation;
+using FSH.Framework.Web.Validation;
 using FSH.Modules.Identity.Contracts.v1.Users.SearchUsers;
 
 namespace FSH.Modules.Identity.Features.v1.Users.SearchUsers;
@@ -7,13 +8,7 @@ public sealed class SearchUsersQueryValidator : AbstractValidator<SearchUsersQue
 {
     public SearchUsersQueryValidator()
     {
-        RuleFor(q => q.PageNumber)
-            .GreaterThan(0)
-            .When(q => q.PageNumber.HasValue);
-
-        RuleFor(q => q.PageSize)
-            .InclusiveBetween(1, 100)
-            .When(q => q.PageSize.HasValue);
+        Include(new PagedQueryValidator<SearchUsersQuery>());
 
         RuleFor(q => q.Search)
             .MaximumLength(200)

@@ -5,7 +5,7 @@ using Mediator;
 
 namespace FSH.Modules.Multitenancy.Features.v1.CreateTenant;
 
-public class CreateTenantCommandHandler(ITenantService tenantService, ITenantProvisioningService provisioningService)
+public sealed class CreateTenantCommandHandler(ITenantService tenantService, ITenantProvisioningService provisioningService)
     : ICommandHandler<CreateTenantCommand, CreateTenantCommandResponse>
 {
     public async ValueTask<CreateTenantCommandResponse> Handle(CreateTenantCommand command, CancellationToken cancellationToken)

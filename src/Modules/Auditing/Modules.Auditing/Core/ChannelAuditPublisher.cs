@@ -37,7 +37,10 @@ public sealed class ChannelAuditPublisher : IAuditPublisher
         ArgumentNullException.ThrowIfNull(auditEvent);
 
         var scope = CurrentScope;
+        var envelope = CreateEnvelope(auditEvent);
+        envelope = BackfillScopeContext(envelope, scope);
 
+<<<<<<< HEAD
         if (auditEvent is not AuditEnvelope env)
         {
             // wrap into an envelope if a custom IAuditEvent was passed (rare)
@@ -102,8 +105,64 @@ public sealed class ChannelAuditPublisher : IAuditPublisher
         }
 
         return _channel.Writer.TryWrite(env)
+=======
+        return _channel.Writer.TryWrite(envelope)
+>>>>>>> develop
             ? ValueTask.CompletedTask
-            : ValueTask.FromCanceled(ct); // optional: swallow based on config
+            : ValueTask.FromCanceled(ct);
+    }
+
+    private static AuditEnvelope CreateEnvelope(IAuditEvent auditEvent)
+    {
+        if (auditEvent is AuditEnvelope existing)
+        {
+            return existing;
+        }
+
+        return new AuditEnvelope(
+            id: Guid.CreateVersion7(),
+            occurredAtUtc: auditEvent.OccurredAtUtc,
+            receivedAtUtc: DateTime.UtcNow,
+            eventType: auditEvent.EventType,
+            severity: auditEvent.Severity,
+            tenantId: auditEvent.TenantId,
+            userId: auditEvent.UserId,
+            userName: auditEvent.UserName,
+            traceId: auditEvent.TraceId,
+            spanId: auditEvent.SpanId,
+            correlationId: auditEvent.CorrelationId,
+            requestId: auditEvent.RequestId,
+            source: auditEvent.Source,
+            tags: auditEvent.Tags,
+            payload: auditEvent.Payload);
+    }
+
+    private static AuditEnvelope BackfillScopeContext(AuditEnvelope env, IAuditScope scope)
+    {
+        bool needsTenantBackfill = string.IsNullOrWhiteSpace(env.TenantId);
+        bool needsUserBackfill = string.IsNullOrWhiteSpace(env.UserId) && scope.UserId is not null;
+
+        if (!needsTenantBackfill && !needsUserBackfill)
+        {
+            return env;
+        }
+
+        return new AuditEnvelope(
+            id: env.Id,
+            occurredAtUtc: env.OccurredAtUtc,
+            receivedAtUtc: env.ReceivedAtUtc,
+            eventType: env.EventType,
+            severity: env.Severity,
+            tenantId: needsTenantBackfill ? scope.TenantId : env.TenantId,
+            userId: needsUserBackfill ? scope.UserId : env.UserId,
+            userName: needsUserBackfill ? scope.UserName ?? env.UserName : env.UserName,
+            traceId: env.TraceId,
+            spanId: env.SpanId,
+            correlationId: env.CorrelationId,
+            requestId: env.RequestId,
+            source: env.Source,
+            tags: env.Tags,
+            payload: env.Payload);
     }
 
     internal ChannelReader<AuditEnvelope> Reader => _channel.Reader;

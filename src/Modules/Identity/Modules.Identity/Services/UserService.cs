@@ -1,57 +1,23 @@
-﻿using Finbuckle.MultiTenant.Abstractions;
-using FSH.Framework.Caching;
-using FSH.Framework.Core.Common;
-using FSH.Framework.Core.Exceptions;
-using FSH.Framework.Core.Context;
-using FSH.Framework.Eventing.Outbox;
-using FSH.Framework.Jobs.Services;
-using FSH.Framework.Mailing;
-using FSH.Framework.Mailing.Services;
-using FSH.Framework.Shared.Constants;
-using FSH.Framework.Shared.Multitenancy;
-using FSH.Framework.Storage;
-using FSH.Framework.Storage.DTOs;
-using FSH.Framework.Storage.Services;
-using FSH.Framework.Web.Origin;
+using FSH.Framework.Shared.Storage;
 using FSH.Modules.Identity.Contracts.DTOs;
-using FSH.Modules.Identity.Contracts.Events;
 using FSH.Modules.Identity.Contracts.Services;
-using FSH.Modules.Identity.Data;
-using FSH.Modules.Identity.Features.v1.Roles;
-using FSH.Modules.Identity.Features.v1.Users;
-using FSH.Modules.Identity.Services;
-using FSH.Modules.Auditing.Contracts;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Security.Claims;
-using System.Text;
 
-namespace FSH.Framework.Infrastructure.Identity.Users.Services;
+namespace FSH.Modules.Identity.Services;
 
-internal sealed partial class UserService(
-    UserManager<FshUser> userManager,
-    SignInManager<FshUser> signInManager,
-    RoleManager<FshRole> roleManager,
-    IdentityDbContext db,
-    ICacheService cache,
-    IJobService jobService,
-    IMailService mailService,
-    IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
-    IStorageService storageService,
-    IOutboxStore outboxStore,
-    IOptions<OriginOptions> originOptions,
-    IHttpContextAccessor httpContextAccessor,
-    ICurrentUser currentUser,
-    IAuditClient auditClient,
-    IPasswordHistoryService passwordHistoryService,
-    IPasswordExpiryService passwordExpiryService
-    ) : IUserService
+/// <summary>
+/// Facade service that delegates to focused single-responsibility services.
+/// Maintained for backward compatibility with existing consumers.
+/// </summary>
+internal sealed class UserService(
+    IUserRegistrationService registrationService,
+    IUserProfileService profileService,
+    IUserStatusService statusService,
+    IUserRoleService roleService,
+    IUserPasswordService passwordService,
+    IUserPermissionService permissionService) : IUserService
 {
+<<<<<<< HEAD
     private readonly Uri? _originUrl = originOptions.Value.OriginUrl;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -169,127 +135,81 @@ internal sealed partial class UserService(
 
         return result;
     }
+=======
+    // Registration operations (delegated to IUserRegistrationService)
+    public Task<string> RegisterAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string userName,
+        string password,
+        string confirmPassword,
+        string phoneNumber,
+        string origin,
+        CancellationToken cancellationToken)
+        => registrationService.RegisterAsync(firstName, lastName, email, userName, password, confirmPassword, phoneNumber, origin, cancellationToken);
+>>>>>>> develop
 
     public Task<string> GetOrCreateFromPrincipalAsync(ClaimsPrincipal principal)
-    {
-        throw new NotImplementedException();
-    }
+        => registrationService.GetOrCreateFromPrincipalAsync(principal);
 
-    public async Task<string> RegisterAsync(string firstName, string lastName, string email, string userName, string password, string confirmPassword, string phoneNumber, string origin, CancellationToken cancellationToken)
-    {
-        if (password != confirmPassword) throw new CustomException("password mismatch.");
+    public Task<string> ConfirmEmailAsync(string userId, string code, string tenant, CancellationToken cancellationToken)
+        => registrationService.ConfirmEmailAsync(userId, code, tenant, cancellationToken);
 
-        // create user entity
-        var user = new FshUser
-        {
-            Email = email,
-            FirstName = firstName,
-            LastName = lastName,
-            UserName = userName,
-            PhoneNumber = phoneNumber,
-            IsActive = true,
-            EmailConfirmed = false,
-            PhoneNumberConfirmed = false,
-        };
+    public Task<string> ConfirmPhoneNumberAsync(string userId, string code)
+        => registrationService.ConfirmPhoneNumberAsync(userId, code);
 
-        // register user
-        var result = await userManager.CreateAsync(user, password);
-        if (!result.Succeeded)
-        {
-            var errors = result.Errors.Select(error => error.Description).ToList();
-            throw new CustomException("error while registering a new user", errors);
-        }
+    // Profile operations (delegated to IUserProfileService)
+    public Task<UserDto> GetAsync(string userId, CancellationToken cancellationToken)
+        => profileService.GetAsync(userId, cancellationToken);
 
-        // add basic role
-        await userManager.AddToRoleAsync(user, RoleConstants.Basic);
+    public Task<List<UserDto>> GetListAsync(CancellationToken cancellationToken)
+        => profileService.GetListAsync(cancellationToken);
 
-        // send confirmation mail
-        if (!string.IsNullOrEmpty(user.Email))
-        {
-            string emailVerificationUri = await GetEmailVerificationUriAsync(user, origin);
-            string emailBody = BuildConfirmationEmailHtml(user.FirstName ?? user.UserName ?? "User", emailVerificationUri);
-            var mailRequest = new MailRequest(
-                new Collection<string> { user.Email },
-                "Confirm Your Email Address",
-                emailBody);
-            jobService.Enqueue("email", () => mailService.SendAsync(mailRequest, cancellationToken));
-        }
+    public Task<int> GetCountAsync(CancellationToken cancellationToken)
+        => profileService.GetCountAsync(cancellationToken);
 
-        // enqueue integration event for user registration
-        var tenantId = multiTenantContextAccessor.MultiTenantContext.TenantInfo?.Id;
-        var correlationId = Guid.NewGuid().ToString();
-        var integrationEvent = new UserRegisteredIntegrationEvent(
-            Id: Guid.NewGuid(),
-            OccurredOnUtc: DateTime.UtcNow,
-            TenantId: tenantId,
-            CorrelationId: correlationId,
-            Source: "Identity",
-            UserId: user.Id,
-            Email: user.Email ?? string.Empty,
-            FirstName: user.FirstName ?? string.Empty,
-            LastName: user.LastName ?? string.Empty);
+    public Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, FileUploadRequest image, bool deleteCurrentImage)
+        => profileService.UpdateAsync(userId, firstName, lastName, phoneNumber, image, deleteCurrentImage);
 
-        await outboxStore.AddAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
+    public Task<bool> ExistsWithEmailAsync(string email, string? exceptId = null)
+        => profileService.ExistsWithEmailAsync(email, exceptId);
 
-        return user.Id;
-    }
+    public Task<bool> ExistsWithNameAsync(string name)
+        => profileService.ExistsWithNameAsync(name);
 
-    public async Task ToggleStatusAsync(bool activateUser, string userId, CancellationToken cancellationToken)
-    {
-        EnsureValidTenant();
+    public Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, string? exceptId = null)
+        => profileService.ExistsWithPhoneNumberAsync(phoneNumber, exceptId);
 
-        var actorId = _currentUser.GetUserId();
-        if (actorId == Guid.Empty)
-        {
-            throw new UnauthorizedException("authenticated user required to toggle status");
-        }
+    // Status operations (delegated to IUserStatusService)
+    public Task ToggleStatusAsync(bool activateUser, string userId, CancellationToken cancellationToken)
+        => statusService.ToggleStatusAsync(activateUser, userId, cancellationToken);
 
-        var actor = await userManager.FindByIdAsync(actorId.ToString());
-        _ = actor ?? throw new UnauthorizedException("current user not found");
+    public Task DeleteAsync(string userId)
+        => statusService.DeleteAsync(userId);
 
-        async ValueTask AuditPolicyFailureAsync(string reason, CancellationToken ct)
-        {
-            var tenant = multiTenantContextAccessor?.MultiTenantContext?.TenantInfo?.Id ?? "unknown";
-            var claims = new Dictionary<string, object?>
-            {
-                ["actorId"] = actorId.ToString(),
-                ["targetUserId"] = userId,
-                ["tenant"] = tenant,
-                ["action"] = activateUser ? "activate" : "deactivate"
-            };
+    // Role operations (delegated to IUserRoleService)
+    public Task<string> AssignRolesAsync(string userId, List<UserRoleDto> userRoles, CancellationToken cancellationToken)
+        => roleService.AssignRolesAsync(userId, userRoles, cancellationToken);
 
-            await _auditClient.WriteSecurityAsync(
-                SecurityAction.PolicyFailed,
-                subjectId: actorId.ToString(),
-                reasonCode: reason,
-                claims: claims,
-                severity: AuditSeverity.Warning,
-                source: "Identity",
-                ct: ct).ConfigureAwait(false);
-        }
+    public Task<List<UserRoleDto>> GetUserRolesAsync(string userId, CancellationToken cancellationToken)
+        => roleService.GetUserRolesAsync(userId, cancellationToken);
 
-        if (!await userManager.IsInRoleAsync(actor, RoleConstants.Admin))
-        {
-            await AuditPolicyFailureAsync("ActorNotAdmin", cancellationToken);
-            throw new CustomException("Only administrators can toggle user status.");
-        }
+    // Password operations (delegated to IUserPasswordService)
+    public Task ForgotPasswordAsync(string email, string origin, CancellationToken cancellationToken)
+        => passwordService.ForgotPasswordAsync(email, origin, cancellationToken);
 
-        if (!activateUser && string.Equals(actor.Id, userId, StringComparison.Ordinal))
-        {
-            await AuditPolicyFailureAsync("SelfDeactivationBlocked", cancellationToken);
-            throw new CustomException("Users cannot deactivate themselves.");
-        }
+    public Task ResetPasswordAsync(string email, string password, string token, CancellationToken cancellationToken)
+        => passwordService.ResetPasswordAsync(email, password, token, cancellationToken);
 
-        var user = await userManager.Users.Where(u => u.Id == userId).FirstOrDefaultAsync(cancellationToken);
-        _ = user ?? throw new NotFoundException("User Not Found.");
+    public Task ChangePasswordAsync(string password, string newPassword, string confirmNewPassword, string userId)
+        => passwordService.ChangePasswordAsync(password, newPassword, confirmNewPassword, userId);
 
-        bool targetIsAdmin = await userManager.IsInRoleAsync(user, RoleConstants.Admin);
-        if (targetIsAdmin)
-        {
-            await AuditPolicyFailureAsync("AdminDeactivationBlocked", cancellationToken);
-            throw new CustomException("Administrators cannot be deactivated.");
-        }
+    // Permission operations (delegated to IUserPermissionService)
+    public Task<List<string>?> GetPermissionsAsync(string userId, CancellationToken cancellationToken)
+        => permissionService.GetPermissionsAsync(userId, cancellationToken);
 
+<<<<<<< HEAD
         if (!activateUser)
         {
             var activeAdmins = await userManager.GetUsersInRoleAsync(RoleConstants.Admin);
@@ -564,4 +484,8 @@ internal sealed partial class UserService(
         var originRelativePath = imageUrl.ToString().TrimStart('/');
         return $"{_originUrl.AbsoluteUri.TrimEnd('/')}/{originRelativePath}";
     }
+=======
+    public Task<bool> HasPermissionAsync(string userId, string permission, CancellationToken cancellationToken = default)
+        => permissionService.HasPermissionAsync(userId, permission, cancellationToken);
+>>>>>>> develop
 }

@@ -1,9 +1,10 @@
 using Finbuckle.MultiTenant.Abstractions;
 using FSH.Framework.Caching;
+using FSH.Framework.Core.Context;
 using FSH.Framework.Core.Exceptions;
 using FSH.Framework.Shared.Multitenancy;
 using FSH.Framework.Storage;
-using FSH.Framework.Storage.DTOs;
+using FSH.Framework.Shared.Storage;
 using FSH.Framework.Storage.Services;
 using FSH.Modules.Multitenancy.Contracts;
 using FSH.Modules.Multitenancy.Contracts.Dtos;
@@ -25,19 +26,22 @@ public sealed class TenantThemeService : ITenantThemeService
     private readonly IMultiTenantContextAccessor<AppTenantInfo> _tenantAccessor;
     private readonly IStorageService _storageService;
     private readonly ILogger<TenantThemeService> _logger;
+    private readonly ICurrentUser _currentUser;
 
     public TenantThemeService(
         ICacheService cache,
         TenantDbContext dbContext,
         IMultiTenantContextAccessor<AppTenantInfo> tenantAccessor,
         IStorageService storageService,
-        ILogger<TenantThemeService> logger)
+        ILogger<TenantThemeService> logger,
+        ICurrentUser currentUser)
     {
         _cache = cache;
         _dbContext = dbContext;
         _tenantAccessor = tenantAccessor;
         _storageService = storageService;
         _logger = logger;
+        _currentUser = currentUser;
     }
 
     public async Task<TenantThemeDto> GetCurrentTenantThemeAsync(CancellationToken ct = default)
@@ -92,7 +96,7 @@ public sealed class TenantThemeService : ITenantThemeService
         await HandleBrandAssetUploadsAsync(theme.BrandAssets, entity, ct).ConfigureAwait(false);
 
         MapDtoToEntity(theme, entity);
-        entity.Update(null); // TODO: Get current user
+        entity.Update(GetCurrentUserId());
 
         await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         await InvalidateCacheAsync(tenantId, ct).ConfigureAwait(false);
@@ -162,7 +166,7 @@ public sealed class TenantThemeService : ITenantThemeService
         if (entity is not null)
         {
             entity.ResetToDefaults();
-            entity.Update(null); // TODO: Get current user
+            entity.Update(GetCurrentUserId());
             await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
 
@@ -335,5 +339,11 @@ public sealed class TenantThemeService : ITenantThemeService
         // Layout
         entity.BorderRadius = dto.Layout.BorderRadius;
         entity.DefaultElevation = dto.Layout.DefaultElevation;
+    }
+
+    private string? GetCurrentUserId()
+    {
+        var userId = _currentUser.GetUserId();
+        return userId == Guid.Empty ? null : userId.ToString();
     }
 }

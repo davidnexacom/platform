@@ -45,8 +45,15 @@ builder.AddProject<Projects.Playground_Api>("playground-api")
     .WithEnvironment("DatabaseOptions__Provider", "POSTGRESQL")
     .WithEnvironment("DatabaseOptions__MigrationsAssembly", "FSH.Playground.Migrations.PostgreSQL")
     .WaitFor(postgres)
+<<<<<<< HEAD
     .WaitFor(redis)
     .WaitFor(rabbitmq);
+=======
+    .WithReference(redis)
+    .WithEnvironment("CachingOptions__Redis", redis.Resource.ConnectionStringExpression)
+    .WithEnvironment("CachingOptions__EnableSsl", "true")
+    .WaitFor(redis);
+>>>>>>> develop
 
 builder.AddProject<Projects.Playground_Blazor>("playground-blazor");
 

@@ -1,15 +1,14 @@
+using System.Linq.Expressions;
+using FSH.Framework.Core.Context;
 using FSH.Framework.Persistence;
 using FSH.Framework.Shared.Persistence;
 using FSH.Modules.Identity.Contracts.DTOs;
 using FSH.Modules.Identity.Contracts.v1.Users.SearchUsers;
 using FSH.Modules.Identity.Data;
-using FSH.Modules.Identity.Features.v1.Users;
+using FSH.Modules.Identity.Domain;
 using Mediator;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using FSH.Framework.Web.Origin;
 
 namespace FSH.Modules.Identity.Features.v1.Users.SearchUsers;
 
@@ -17,19 +16,16 @@ public sealed class SearchUsersQueryHandler : IQueryHandler<SearchUsersQuery, Pa
 {
     private readonly UserManager<FshUser> _userManager;
     private readonly IdentityDbContext _dbContext;
-    private readonly Uri? _originUrl;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IRequestContext _requestContext;
 
     public SearchUsersQueryHandler(
         UserManager<FshUser> userManager,
         IdentityDbContext dbContext,
-        IOptions<OriginOptions> originOptions,
-        IHttpContextAccessor httpContextAccessor)
+        IRequestContext requestContext)
     {
         _userManager = userManager;
         _dbContext = dbContext;
-        _originUrl = originOptions.Value.OriginUrl;
-        _httpContextAccessor = httpContextAccessor;
+        _requestContext = requestContext;
     }
 
     public async ValueTask<PagedResponse<UserDto>> Handle(SearchUsersQuery query, CancellationToken cancellationToken)
@@ -112,6 +108,15 @@ public sealed class SearchUsersQueryHandler : IQueryHandler<SearchUsersQuery, Pa
         };
     }
 
+    private static readonly Dictionary<string, Expression<Func<FshUser, object?>>> SortableFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["firstname"] = u => u.FirstName,
+        ["lastname"] = u => u.LastName,
+        ["email"] = u => u.Email,
+        ["username"] = u => u.UserName,
+        ["isactive"] = u => u.IsActive
+    };
+
     private static IQueryable<FshUser> ApplySorting(IQueryable<FshUser> query, string? sort)
     {
         if (string.IsNullOrWhiteSpace(sort))
@@ -124,28 +129,42 @@ public sealed class SearchUsersQueryHandler : IQueryHandler<SearchUsersQuery, Pa
 
         foreach (var part in sortParts)
         {
-            var descending = part.StartsWith('-');
-            var field = descending ? part[1..] : part;
-
-            orderedQuery = (orderedQuery, field.ToLowerInvariant()) switch
+            var (field, descending) = ParseSortField(part);
+            
+            if (!SortableFields.TryGetValue(field, out var selector))
             {
-                (null, "firstname") => descending ? query.OrderByDescending(u => u.FirstName) : query.OrderBy(u => u.FirstName),
-                (null, "lastname") => descending ? query.OrderByDescending(u => u.LastName) : query.OrderBy(u => u.LastName),
-                (null, "email") => descending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
-                (null, "username") => descending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
-                (null, "isactive") => descending ? query.OrderByDescending(u => u.IsActive) : query.OrderBy(u => u.IsActive),
-                (null, _) => query.OrderBy(u => u.FirstName),
+                selector = u => u.FirstName; // Default fallback
+            }
 
-                (not null, "firstname") => descending ? orderedQuery.ThenByDescending(u => u.FirstName) : orderedQuery.ThenBy(u => u.FirstName),
-                (not null, "lastname") => descending ? orderedQuery.ThenByDescending(u => u.LastName) : orderedQuery.ThenBy(u => u.LastName),
-                (not null, "email") => descending ? orderedQuery.ThenByDescending(u => u.Email) : orderedQuery.ThenBy(u => u.Email),
-                (not null, "username") => descending ? orderedQuery.ThenByDescending(u => u.UserName) : orderedQuery.ThenBy(u => u.UserName),
-                (not null, "isactive") => descending ? orderedQuery.ThenByDescending(u => u.IsActive) : orderedQuery.ThenBy(u => u.IsActive),
-                (not null, _) => orderedQuery.ThenBy(u => u.FirstName)
-            };
+            orderedQuery = ApplySortExpression(query, orderedQuery, selector, descending);
         }
 
         return orderedQuery ?? query.OrderBy(u => u.FirstName);
+    }
+
+    private static (string field, bool descending) ParseSortField(string part)
+    {
+        var descending = part.StartsWith('-');
+        var field = descending ? part[1..] : part;
+        return (field, descending);
+    }
+
+    private static IOrderedQueryable<FshUser> ApplySortExpression(
+        IQueryable<FshUser> query,
+        IOrderedQueryable<FshUser>? orderedQuery,
+        Expression<Func<FshUser, object?>> selector,
+        bool descending)
+    {
+        if (orderedQuery is null)
+        {
+            return descending 
+                ? query.OrderByDescending(selector) 
+                : query.OrderBy(selector);
+        }
+
+        return descending 
+            ? orderedQuery.ThenByDescending(selector) 
+            : orderedQuery.ThenBy(selector);
     }
 
     private string? ResolveImageUrl(string? imageUrl)
@@ -160,20 +179,13 @@ public sealed class SearchUsersQueryHandler : IQueryHandler<SearchUsersQuery, Pa
             return imageUrl;
         }
 
-        if (_originUrl is null)
+        var origin = _requestContext.Origin;
+        if (string.IsNullOrEmpty(origin))
         {
-            var request = _httpContextAccessor.HttpContext?.Request;
-            if (request is not null && !string.IsNullOrWhiteSpace(request.Scheme) && request.Host.HasValue)
-            {
-                var baseUri = $"{request.Scheme}://{request.Host.Value}{request.PathBase}";
-                var relativePath = imageUrl.TrimStart('/');
-                return $"{baseUri.TrimEnd('/')}/{relativePath}";
-            }
-
             return imageUrl;
         }
 
-        var originRelativePath = imageUrl.TrimStart('/');
-        return $"{_originUrl.AbsoluteUri.TrimEnd('/')}/{originRelativePath}";
+        var relativePath = imageUrl.TrimStart('/');
+        return $"{origin}/{relativePath}";
     }
 }

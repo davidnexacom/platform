@@ -68,6 +68,9 @@ internal static class ApiClientRegistration
             return new UsersClient(client);
         });
 
+        services.AddTransient<IGroupsClient>(sp =>
+            new GroupsClient(ResolveClient(sp)));
+
         services.AddTransient<ISessionsClient>(sp =>
         {
             var factory = sp.GetRequiredService<IHttpClientFactory>();

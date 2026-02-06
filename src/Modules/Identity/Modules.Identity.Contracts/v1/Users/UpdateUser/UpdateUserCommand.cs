@@ -1,4 +1,4 @@
-using FSH.Framework.Storage.DTOs;
+using FSH.Framework.Shared.Storage;
 using Mediator;
 
 namespace FSH.Modules.Identity.Contracts.v1.Users.UpdateUser;

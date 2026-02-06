@@ -1,0 +1,474 @@
+@page "/groups"
+@using FSH.Playground.Blazor.ApiClient
+@using FSH.Framework.Blazor.UI.Components.Dialogs
+@using FSH.Framework.Blazor.UI.Components.Cards
+@inherits ComponentBase
+@inject IIdentityClient IdentityClient
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<FshPageHeader Title="Groups"
+               Description="Manage user groups and role assignments">
+    <ActionContent>
+        @if (_selectedGroups.Any())
+        {
+            <MudButtonGroup Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small" Class="mr-2">
+                <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                           Color="Color.Error"
+                           OnClick="BulkDelete"
+                           Disabled="_bulkBusy">
+                    Delete (@_selectedGroups.Count)
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Clear"
+                           OnClick="ClearSelection">
+                    Clear
+                </MudButton>
+            </MudButtonGroup>
+        }
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="ShowCreate">
+            New Group
+        </MudButton>
+    </ActionContent>
+</FshPageHeader>
+
+@* Stats Cards *@
+<MudGrid Class="mb-4">
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.Groups"
+                     IconColor="Color.Primary"
+                     Value="@_stats.Total.ToString()"
+                     Label="Total Groups"
+                     Badge="Total" />
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.Lock"
+                     IconColor="Color.Warning"
+                     Value="@_stats.SystemGroups.ToString()"
+                     Label="System Groups"
+                     Badge="System" />
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.GroupAdd"
+                     IconColor="Color.Success"
+                     Value="@_stats.DefaultGroups.ToString()"
+                     Label="Default Groups"
+                     Badge="Default" />
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <FshStatCard Icon="@Icons.Material.Filled.Edit"
+                     IconColor="Color.Info"
+                     Value="@_stats.CustomGroups.ToString()"
+                     Label="Custom Groups"
+                     Badge="Custom" />
+    </MudItem>
+</MudGrid>
+
+@* Filter Panel *@
+<MudExpansionPanels Class="mb-4" Elevation="0">
+    <MudExpansionPanel Text="Filters" IsInitiallyExpanded="true" Class="fsh-card">
+        <MudGrid GutterSize="2">
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_filter.Search"
+                              Label="Search"
+                              Placeholder="Group name or description"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true"
+                              DebounceInterval="400"
+                              OnDebounceIntervalElapsed="@((string _) => RefreshData())" />
+            </MudItem>
+            <MudItem xs="12" sm="6" Class="d-flex align-center justify-end">
+                <MudButton StartIcon="@Icons.Material.Filled.FilterAltOff"
+                           Color="Color.Default"
+                           Variant="Variant.Text"
+                           OnClick="ClearFilters">
+                    Clear Filters
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Refresh"
+                           Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           OnClick="LoadData"
+                           Class="ml-2">
+                    Refresh
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@* Groups Grid *@
+<MudPaper Class="fsh-card pa-0" Style="overflow: hidden;">
+    <MudDataGrid T="GroupDto"
+                 @ref="_dataGrid"
+                 Items="_filtered"
+                 Loading="_loading"
+                 Hover="true"
+                 Dense="true"
+                 Striped="true"
+                 MultiSelection="true"
+                 SelectedItems="_selectedGroups"
+                 SelectedItemsChanged="OnSelectionChanged"
+                 SortMode="SortMode.Single"
+                 Filterable="false"
+                 RowsPerPage="@_pageSize"
+                 Class="groups-datagrid">
+        <Columns>
+            <SelectColumn T="GroupDto" ShowInFooter="false" />
+            <TemplateColumn Title="Group" Sortable="true" SortBy="@(x => x.Name)">
+                <CellTemplate>
+                    <MudStack Spacing="0">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudLink Typo="Typo.body1" Class="fw-600" OnClick="@(() => GoToMembers(context.Item.Id))">
+                                @context.Item.Name
+                            </MudLink>
+                            @if (context.Item.IsDefault)
+                            {
+                                <MudTooltip Text="New users are automatically added to this group">
+                                    <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Color="Color.Warning" />
+                                </MudTooltip>
+                            }
+                        </MudStack>
+                        <MudText Typo="Typo.caption" Class="text-muted">
+                            @(string.IsNullOrEmpty(context.Item.Description) ? "No description" : context.Item.Description)
+                        </MudText>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Type" Sortable="true" SortBy="@(x => x.IsSystemGroup)">
+                <CellTemplate>
+                    @if (context.Item.IsSystemGroup)
+                    {
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Outlined">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="mr-1" />
+                            System
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-1" />
+                            Custom
+                        </MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Roles" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.RoleNames?.Any() == true)
+                    {
+                        <MudStack Row="true" Spacing="1">
+                            @foreach (var role in context.Item.RoleNames.Take(2))
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@GetRoleColor(role)">
+                                    @role
+                                </MudChip>
+                            }
+                            @if (context.Item.RoleNames.Count > 2)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text">
+                                    +@(context.Item.RoleNames.Count - 2)
+                                </MudChip>
+                            }
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Class="text-muted">No roles assigned</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Members" Sortable="true" SortBy="@(x => x.MemberCount)">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-1" />
+                        @context.Item.MemberCount
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false" HeaderClass="text-right" CellClass="text-right">
+                <CellTemplate>
+                    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="0">
+                        <MudTooltip Text="Manage Members">
+                            <MudIconButton Icon="@Icons.Material.Filled.PeopleAlt"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => GoToMembers(context.Item.Id))" />
+                        </MudTooltip>
+                        <MudTooltip Text="@(context.Item.IsSystemGroup ? "System groups cannot be edited" : "Edit Group")">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           Color="Color.Info"
+                                           OnClick="@(() => EditGroup(context.Item))"
+                                           Disabled="@context.Item.IsSystemGroup" />
+                        </MudTooltip>
+                        <MudTooltip Text="@(context.Item.IsSystemGroup ? "System groups cannot be deleted" : "Delete Group")">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeleteGroup(context.Item))"
+                                           Disabled="@(context.Item.IsSystemGroup || _busyGroupId == context.Item.Id)" />
+                        </MudTooltip>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="GroupDto" PageSizeOptions="@_pageSizeOptions" />
+        </PagerContent>
+        <NoRecordsContent>
+            <MudStack AlignItems="AlignItems.Center" Spacing="4" Class="pa-8">
+                <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Large" Color="Color.Default" />
+                <MudText Typo="Typo.h6">No groups found</MudText>
+                <MudText Typo="Typo.body2" Class="text-muted">Try adjusting your filters or create a new group.</MudText>
+            </MudStack>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+<style>
+    .groups-datagrid .mud-table-head .mud-table-row .mud-table-cell {
+        font-weight: 600;
+        background-color: rgba(var(--mud-palette-primary-rgb), 0.04);
+    }
+
+    .groups-datagrid .mud-table-row:hover {
+        background-color: rgba(var(--mud-palette-primary-rgb), 0.02);
+    }
+</style>
+
+@code {
+    private MudDataGrid<GroupDto>? _dataGrid;
+    private List<GroupDto> _groups = new();
+    private List<GroupDto> _filtered = new();
+    private HashSet<GroupDto> _selectedGroups = new();
+    private bool _loading = true;
+    private Guid? _busyGroupId;
+    private bool _bulkBusy;
+
+    private readonly int _pageSize = 10;
+    private readonly int[] _pageSizeOptions = { 5, 10, 25, 50 };
+
+    private GroupStats _stats = new();
+    private FilterModel _filter = new();
+
+    private class GroupStats
+    {
+        public int Total { get; set; }
+        public int SystemGroups { get; set; }
+        public int CustomGroups { get; set; }
+        public int DefaultGroups { get; set; }
+    }
+
+    private class FilterModel
+    {
+        public string? Search { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var result = await IdentityClient.GroupsGetAsync(_filter.Search);
+            _groups = result?.ToList() ?? new List<GroupDto>();
+            CalculateStats();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load groups: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void CalculateStats()
+    {
+        _stats = new GroupStats
+        {
+            Total = _groups.Count,
+            SystemGroups = _groups.Count(g => g.IsSystemGroup),
+            CustomGroups = _groups.Count(g => !g.IsSystemGroup),
+            DefaultGroups = _groups.Count(g => g.IsDefault)
+        };
+    }
+
+    private void ApplyFilters()
+    {
+        var query = _groups.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_filter.Search))
+        {
+            var term = _filter.Search.ToLowerInvariant();
+            query = query.Where(g =>
+                (g.Name?.ToLowerInvariant().Contains(term) ?? false) ||
+                (g.Description?.ToLowerInvariant().Contains(term) ?? false));
+        }
+
+        _filtered = query.OrderBy(g => g.Name).ToList();
+    }
+
+    private void RefreshData()
+    {
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        _filter = new FilterModel();
+        ApplyFilters();
+    }
+
+    private static Color GetRoleColor(string? roleName) => roleName?.ToLowerInvariant() switch
+    {
+        "admin" => Color.Error,
+        "administrator" => Color.Error,
+        "basic" => Color.Info,
+        _ => Color.Default
+    };
+
+    private void GoToMembers(Guid id)
+    {
+        Navigation.NavigateTo($"/groups/{id}/members");
+    }
+
+    private void OnSelectionChanged(HashSet<GroupDto> items)
+    {
+        _selectedGroups = items;
+    }
+
+    private void ClearSelection()
+    {
+        _selectedGroups.Clear();
+        StateHasChanged();
+    }
+
+    private async Task ShowCreate()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true
+        };
+
+        var dialog = await DialogService.ShowAsync<CreateGroupDialog>("Create Group", options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task EditGroup(GroupDto group)
+    {
+        if (group.IsSystemGroup)
+        {
+            Snackbar.Add("System groups cannot be edited.", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters<CreateGroupDialog>
+        {
+            { x => x.ExistingGroup, group }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true
+        };
+
+        var dialog = await DialogService.ShowAsync<CreateGroupDialog>("Edit Group", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteGroup(GroupDto group)
+    {
+        if (group.IsSystemGroup)
+        {
+            Snackbar.Add("System groups cannot be deleted.", Severity.Warning);
+            return;
+        }
+
+        var confirmed = await DialogService.ShowDeleteConfirmAsync(group.Name ?? "this group");
+        if (!confirmed) return;
+
+        _busyGroupId = group.Id;
+        try
+        {
+            await IdentityClient.GroupsDeleteAsync(group.Id);
+            Snackbar.Add("Group deleted successfully.", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to delete group: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busyGroupId = null;
+        }
+    }
+
+    private async Task BulkDelete()
+    {
+        var groups = _selectedGroups.Where(g => !g.IsSystemGroup).ToList();
+        if (!groups.Any())
+        {
+            Snackbar.Add("No deletable groups selected. System groups cannot be deleted.", Severity.Info);
+            return;
+        }
+
+        var confirmed = await DialogService.ShowConfirmAsync(
+            "Bulk Delete",
+            $"Delete {groups.Count} group(s)? This action cannot be undone.",
+            "Delete All",
+            "Cancel",
+            Color.Error,
+            Icons.Material.Outlined.DeleteForever,
+            Color.Error);
+
+        if (!confirmed) return;
+
+        _bulkBusy = true;
+        var success = 0;
+        foreach (var group in groups)
+        {
+            try
+            {
+                await IdentityClient.GroupsDeleteAsync(group.Id);
+                success++;
+            }
+            catch
+            {
+                // Continue with remaining groups
+            }
+        }
+        _bulkBusy = false;
+        Snackbar.Add($"Deleted {success} of {groups.Count} groups.", Severity.Success);
+        ClearSelection();
+        await LoadData();
+    }
+}

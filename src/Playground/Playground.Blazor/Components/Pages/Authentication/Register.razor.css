@@ -1,0 +1,277 @@
+/* ===== Auth Page - Centered Card Design ===== */
+
+.auth-page {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    padding: 2rem 1rem;
+}
+
+.auth-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 460px;
+}
+
+/* ===== Brand Section ===== */
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.brand-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1a1a1a;
+    border-radius: 6px;
+    color: white;
+}
+
+.brand-icon ::deep .mud-icon-root {
+    font-size: 16px;
+}
+
+.brand-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* ===== Auth Card ===== */
+.auth-card {
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e5;
+}
+
+/* ===== Header ===== */
+.auth-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 0.5rem 0;
+}
+
+.auth-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* ===== Form ===== */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.optional-label {
+    font-weight: 400;
+    color: #9ca3af;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #1a1a1a;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+
+.form-input::placeholder {
+    color: #9ca3af;
+}
+
+.form-input:hover {
+    border-color: #d1d5db;
+}
+
+.form-input:focus {
+    border-color: #1a1a1a;
+    box-shadow: 0 0 0 1px #1a1a1a;
+}
+
+/* ===== Checkbox ===== */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.checkbox-input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #1a1a1a;
+}
+
+/* ===== Error Message ===== */
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.875rem;
+}
+
+.error-message ::deep .mud-icon-root {
+    font-size: 18px;
+}
+
+/* ===== Auth Button ===== */
+.auth-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #ffffff;
+    background-color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    margin-top: 0.5rem;
+}
+
+.auth-button:hover:not(:disabled) {
+    background-color: #333333;
+}
+
+.auth-button:active:not(:disabled) {
+    background-color: #0a0a0a;
+}
+
+.auth-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.auth-button ::deep .mud-progress-circular {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* ===== Link Text ===== */
+.auth-link-text {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0.5rem 0 0 0;
+}
+
+.auth-link {
+    color: #1a1a1a;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.auth-link:hover {
+    color: #4b5563;
+}
+
+/* ===== Footer ===== */
+.auth-footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+.footer-link {
+    color: #1a1a1a;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.footer-link:hover {
+    color: #4b5563;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 480px) {
+    .auth-page {
+        padding: 1rem;
+    }
+
+    .auth-card {
+        padding: 1.5rem;
+    }
+
+    .auth-title {
+        font-size: 1.25rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Focus States for Accessibility ===== */
+.auth-button:focus-visible,
+.auth-link:focus-visible,
+.footer-link:focus-visible {
+    outline: 2px solid #1a1a1a;
+    outline-offset: 2px;
+}
+
+.form-input:focus-visible {
+    outline: none;
+}

@@ -1,0 +1,229 @@
+@page "/register"
+@layout EmptyLayout
+@attribute [AllowAnonymous]
+@using FSH.Framework.Shared.Multitenancy
+@using Microsoft.AspNetCore.Authorization
+@using FSH.Playground.Blazor.ApiClient
+@inject NavigationManager Navigation
+@inject IIdentityClient IdentityClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Create Account</PageTitle>
+<div class="auth-page">
+    <div class="auth-wrapper">
+        @* Logo/Brand *@
+        <div class="brand-section">
+            <div class="brand-icon">
+                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" />
+            </div>
+            <span class="brand-name">fullstackhero</span>
+        </div>
+
+        @* Register Card *@
+        <div class="auth-card">
+            @* Header *@
+            <div class="auth-header">
+                <h1 class="auth-title">Create an account</h1>
+                <p class="auth-subtitle">Enter your details to get started</p>
+            </div>
+
+            @* Registration Form *@
+            <EditForm Model="@_model" OnValidSubmit="HandleSubmitAsync" class="auth-form">
+                <DataAnnotationsValidator />
+
+                @* Tenant Field *@
+                <div class="form-group">
+                    <label class="form-label">Tenant</label>
+                    <input type="text"
+                           @bind="_model.Tenant"
+                           placeholder="Enter tenant name"
+                           class="form-input"
+                           required />
+                </div>
+
+                @* Name Fields *@
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text"
+                               @bind="_model.FirstName"
+                               placeholder="John"
+                               class="form-input"
+                               required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text"
+                               @bind="_model.LastName"
+                               placeholder="Doe"
+                               class="form-input"
+                               required />
+                    </div>
+                </div>
+
+                @* Email Field *@
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email"
+                           @bind="_model.Email"
+                           placeholder="m@example.com"
+                           class="form-input"
+                           required />
+                </div>
+
+                @* Username Field *@
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text"
+                           @bind="_model.UserName"
+                           placeholder="johndoe"
+                           class="form-input"
+                           required />
+                </div>
+
+                @* Phone Field (Optional) *@
+                <div class="form-group">
+                    <label class="form-label">Phone Number <span class="optional-label">(Optional)</span></label>
+                    <input type="tel"
+                           @bind="_model.PhoneNumber"
+                           placeholder="+1 (555) 000-0000"
+                           class="form-input" />
+                </div>
+
+                @* Password Field *@
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="@(_showPassword ? "text" : "password")"
+                           @bind="_model.Password"
+                           placeholder="Create a strong password"
+                           class="form-input"
+                           required />
+                </div>
+
+                @* Confirm Password Field *@
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="@(_showPassword ? "text" : "password")"
+                           @bind="_model.ConfirmPassword"
+                           placeholder="Confirm your password"
+                           class="form-input"
+                           required />
+                </div>
+
+                @* Show Password Toggle *@
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" @bind="_showPassword" class="checkbox-input" />
+                        <span>Show password</span>
+                    </label>
+                </div>
+
+                @* Error Message *@
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="error-message">
+                        <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Small" />
+                        <span>@_errorMessage</span>
+                    </div>
+                }
+
+                @* Register Button *@
+                <button type="submit" class="auth-button" disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Inherit" />
+                        <span>Creating account...</span>
+                    }
+                    else
+                    {
+                        <span>Create account</span>
+                    }
+                </button>
+
+                @* Login Link *@
+                <p class="auth-link-text">
+                    Already have an account? <a href="/login" class="auth-link">Sign in</a>
+                </p>
+            </EditForm>
+        </div>
+
+        @* Footer *@
+        <div class="auth-footer">
+            <span>By creating an account, you agree to our <a href="#" class="footer-link">Terms of Service</a> and <a href="#" class="footer-link">Privacy Policy</a>.</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel _model = new();
+    private bool _showPassword = false;
+    private bool _isLoading = false;
+    private string? _errorMessage;
+
+    private class RegisterModel
+    {
+        public string Tenant { get; set; } = "root";
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _errorMessage = null;
+
+        if (_model.Password != _model.ConfirmPassword)
+        {
+            _errorMessage = "Passwords do not match.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.FirstName) ||
+            string.IsNullOrWhiteSpace(_model.LastName) ||
+            string.IsNullOrWhiteSpace(_model.Email) ||
+            string.IsNullOrWhiteSpace(_model.UserName) ||
+            string.IsNullOrWhiteSpace(_model.Password))
+        {
+            _errorMessage = "Please fill in all required fields.";
+            return;
+        }
+
+        _isLoading = true;
+
+        try
+        {
+            var command = new RegisterUserCommand
+            {
+                FirstName = _model.FirstName,
+                LastName = _model.LastName,
+                Email = _model.Email,
+                UserName = _model.UserName,
+                Password = _model.Password,
+                ConfirmPassword = _model.ConfirmPassword,
+                PhoneNumber = _model.PhoneNumber
+            };
+
+            await IdentityClient.SelfRegisterAsync(_model.Tenant, command);
+
+            Snackbar.Add("Account created successfully! Please check your email to confirm your account.", Severity.Success);
+            Navigation.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again.";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

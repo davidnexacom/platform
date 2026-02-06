@@ -1,14 +1,15 @@
-﻿using FSH.Modules.Auditing.Contracts;
+using FSH.Framework.Core.Context;
+using FSH.Modules.Auditing.Contracts;
 using FSH.Modules.Identity.Contracts.DTOs;
 using FSH.Modules.Identity.Contracts.Services;
 using FSH.Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
 using Mediator;
-using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Finbuckle.MultiTenant.Abstractions;
 using FSH.Framework.Eventing.Outbox;
 using FSH.Framework.Shared.Multitenancy;
 using FSH.Modules.Identity.Contracts.Events;
+using Microsoft.Extensions.Logging;
 
 namespace FSH.Modules.Identity.Features.v1.Tokens.TokenGeneration;
 
@@ -18,27 +19,30 @@ public sealed class GenerateTokenCommandHandler
     private readonly IIdentityService _identityService;
     private readonly ITokenService _tokenService;
     private readonly ISecurityAudit _securityAudit;
-    private readonly IHttpContextAccessor _http;
+    private readonly IRequestContext _requestContext;
     private readonly IOutboxStore _outboxStore;
     private readonly IMultiTenantContextAccessor<AppTenantInfo> _multiTenantContextAccessor;
     private readonly ISessionService _sessionService;
+    private readonly ILogger<GenerateTokenCommandHandler> _logger;
 
     public GenerateTokenCommandHandler(
         IIdentityService identityService,
         ITokenService tokenService,
         ISecurityAudit securityAudit,
-        IHttpContextAccessor http,
+        IRequestContext requestContext,
         IOutboxStore outboxStore,
         IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
-        ISessionService sessionService)
+        ISessionService sessionService,
+        ILogger<GenerateTokenCommandHandler> logger)
     {
         _identityService = identityService;
         _tokenService = tokenService;
         _securityAudit = securityAudit;
-        _http = http;
+        _requestContext = requestContext;
         _outboxStore = outboxStore;
         _multiTenantContextAccessor = multiTenantContextAccessor;
         _sessionService = sessionService;
+        _logger = logger;
     }
 
     public async ValueTask<TokenResponse> Handle(
@@ -48,6 +52,7 @@ public sealed class GenerateTokenCommandHandler
         ArgumentNullException.ThrowIfNull(request);
 
         // Gather context for auditing
+<<<<<<< HEAD
         var http = _http.HttpContext;
         
         // Check for forwarded headers first (from Blazor BFF)
@@ -63,6 +68,11 @@ public sealed class GenerateTokenCommandHandler
         
         var clientId = http?.Request.Headers["X-Client-Id"].ToString();
         if (string.IsNullOrWhiteSpace(clientId)) clientId = "web";
+=======
+        var ip = _requestContext.IpAddress ?? "unknown";
+        var ua = _requestContext.UserAgent ?? "unknown";
+        var clientId = _requestContext.ClientId;
+>>>>>>> develop
 
         // Validate credentials
         var identityResult = await _identityService
@@ -112,10 +122,11 @@ public sealed class GenerateTokenCommandHandler
                 token.RefreshTokenExpiresAt,
                 cancellationToken);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // Session creation is non-critical - don't fail the login
             // This can happen if migrations haven't been applied yet
+            _logger.LogWarning(ex, "Failed to create user session for user {UserId}. Login will continue without session tracking.", subject);
         }
 
         // 3) Audit token issuance with a fingerprint (never raw token)

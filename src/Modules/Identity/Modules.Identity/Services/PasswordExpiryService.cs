@@ -1,57 +1,87 @@
+using FSH.Modules.Identity.Contracts.DTOs;
+using FSH.Modules.Identity.Contracts.Services;
 using FSH.Modules.Identity.Data;
-using FSH.Modules.Identity.Features.v1.Users;
+using FSH.Modules.Identity.Domain;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
 namespace FSH.Modules.Identity.Services;
 
-public interface IPasswordExpiryService
-{
-    /// <summary>Check if a user's password has expired</summary>
-    bool IsPasswordExpired(FshUser user);
-
-    /// <summary>Get the number of days until password expires (-1 if already expired)</summary>
-    int GetDaysUntilExpiry(FshUser user);
-
-    /// <summary>Check if password is expiring soon (within warning period)</summary>
-    bool IsPasswordExpiringWithinWarningPeriod(FshUser user);
-
-    /// <summary>Get expiry status with detailed information</summary>
-    PasswordExpiryStatus GetPasswordExpiryStatus(FshUser user);
-
-    /// <summary>Update the last password change date for a user</summary>
-    void UpdateLastPasswordChangeDate(FshUser user);
-}
-
-public class PasswordExpiryStatus
-{
-    public bool IsExpired { get; set; }
-    public bool IsExpiringWithinWarningPeriod { get; set; }
-    public int DaysUntilExpiry { get; set; }
-    public DateTime? ExpiryDate { get; set; }
-
-    public string Status
-    {
-        get
-        {
-            if (IsExpired)
-                return "Expired";
-            if (IsExpiringWithinWarningPeriod)
-                return "Expiring Soon";
-            return "Valid";
-        }
-    }
-}
-
 internal sealed class PasswordExpiryService : IPasswordExpiryService
 {
+    private readonly UserManager<FshUser> _userManager;
     private readonly PasswordPolicyOptions _passwordPolicyOptions;
 
-    public PasswordExpiryService(IOptions<PasswordPolicyOptions> passwordPolicyOptions)
+    public PasswordExpiryService(
+        UserManager<FshUser> userManager,
+        IOptions<PasswordPolicyOptions> passwordPolicyOptions)
     {
+        _userManager = userManager;
         _passwordPolicyOptions = passwordPolicyOptions.Value;
     }
 
-    public bool IsPasswordExpired(FshUser user)
+    public async Task<bool> IsPasswordExpiredAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return false;
+        }
+
+        return IsPasswordExpired(user);
+    }
+
+    public async Task<int> GetDaysUntilExpiryAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return int.MaxValue;
+        }
+
+        return GetDaysUntilExpiry(user);
+    }
+
+    public async Task<bool> IsPasswordExpiringWithinWarningPeriodAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return false;
+        }
+
+        return IsPasswordExpiringWithinWarningPeriod(user);
+    }
+
+    public async Task<PasswordExpiryStatusDto> GetPasswordExpiryStatusAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return new PasswordExpiryStatusDto
+            {
+                IsExpired = false,
+                IsExpiringWithinWarningPeriod = false,
+                DaysUntilExpiry = int.MaxValue,
+                ExpiryDate = null
+            };
+        }
+
+        return GetPasswordExpiryStatus(user);
+    }
+
+    public async Task UpdateLastPasswordChangeDateAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is not null)
+        {
+            user.LastPasswordChangeDate = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+        }
+    }
+
+    // Internal helpers that work with FshUser directly
+    private bool IsPasswordExpired(FshUser user)
     {
         if (!_passwordPolicyOptions.EnforcePasswordExpiry)
         {
@@ -62,7 +92,7 @@ internal sealed class PasswordExpiryService : IPasswordExpiryService
         return DateTime.UtcNow > expiryDate;
     }
 
-    public int GetDaysUntilExpiry(FshUser user)
+    private int GetDaysUntilExpiry(FshUser user)
     {
         if (!_passwordPolicyOptions.EnforcePasswordExpiry)
         {
@@ -74,7 +104,7 @@ internal sealed class PasswordExpiryService : IPasswordExpiryService
         return daysUntilExpiry;
     }
 
-    public bool IsPasswordExpiringWithinWarningPeriod(FshUser user)
+    private bool IsPasswordExpiringWithinWarningPeriod(FshUser user)
     {
         if (!_passwordPolicyOptions.EnforcePasswordExpiry)
         {
@@ -85,24 +115,19 @@ internal sealed class PasswordExpiryService : IPasswordExpiryService
         return daysUntilExpiry >= 0 && daysUntilExpiry <= _passwordPolicyOptions.PasswordExpiryWarningDays;
     }
 
-    public PasswordExpiryStatus GetPasswordExpiryStatus(FshUser user)
+    private PasswordExpiryStatusDto GetPasswordExpiryStatus(FshUser user)
     {
         var expiryDate = user.LastPasswordChangeDate.AddDays(_passwordPolicyOptions.PasswordExpiryDays);
         var daysUntilExpiry = GetDaysUntilExpiry(user);
         var isExpired = IsPasswordExpired(user);
         var isExpiringWithinWarningPeriod = IsPasswordExpiringWithinWarningPeriod(user);
 
-        return new PasswordExpiryStatus
+        return new PasswordExpiryStatusDto
         {
             IsExpired = isExpired,
             IsExpiringWithinWarningPeriod = isExpiringWithinWarningPeriod,
             DaysUntilExpiry = daysUntilExpiry,
             ExpiryDate = _passwordPolicyOptions.EnforcePasswordExpiry ? expiryDate : null
         };
-    }
-
-    public void UpdateLastPasswordChangeDate(FshUser user)
-    {
-        user.LastPasswordChangeDate = DateTime.UtcNow;
     }
 }

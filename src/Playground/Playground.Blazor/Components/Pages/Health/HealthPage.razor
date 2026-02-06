@@ -1,5 +1,6 @@
 @page "/health"
 @using FSH.Playground.Blazor.ApiClient
+@using FSH.Framework.Blazor.UI.Components.Cards
 @using System.Timers
 @implements IDisposable
 @inject IHealthClient HealthClient
@@ -28,60 +29,32 @@
 @* Stats Cards *@
 <MudGrid Class="mb-4">
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Healthy</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@(_readyResult?.Results?.Count(r => r.Status == "Healthy") ?? 0)</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Healthy Services</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.CheckCircle"
+                     IconColor="Color.Success"
+                     Value="@((_readyResult?.Results?.Count(r => r.Status == "Healthy") ?? 0).ToString())"
+                     Label="Healthy Services"
+                     Badge="Healthy" />
     </MudItem>
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">Degraded</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@(_readyResult?.Results?.Count(r => r.Status == "Degraded") ?? 0)</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Degraded Services</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.Warning"
+                     IconColor="Color.Warning"
+                     Value="@((_readyResult?.Results?.Count(r => r.Status == "Degraded") ?? 0).ToString())"
+                     Label="Degraded Services"
+                     Badge="Degraded" />
     </MudItem>
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">Unhealthy</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@(_readyResult?.Results?.Count(r => r.Status == "Unhealthy") ?? 0)</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Unhealthy Services</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.Error"
+                     IconColor="Color.Error"
+                     Value="@((_readyResult?.Results?.Count(r => r.Status == "Unhealthy") ?? 0).ToString())"
+                     Label="Unhealthy Services"
+                     Badge="Unhealthy" />
     </MudItem>
     <MudItem xs="6" sm="3">
-        <MudCard Class="stats-card" Elevation="2">
-            <MudCardContent Class="pa-4">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Info" Size="Size.Large" />
-                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">Response</MudChip>
-                    </MudStack>
-                    <MudText Typo="Typo.h4" Class="fw-700">@GetAverageDuration()ms</MudText>
-                    <MudText Typo="Typo.body2" Class="text-muted">Avg Response Time</MudText>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <FshStatCard Icon="@Icons.Material.Filled.Speed"
+                     IconColor="Color.Info"
+                     Value="@($"{GetAverageDuration()}ms")"
+                     Label="Avg Response Time"
+                     Badge="Response" />
     </MudItem>
 </MudGrid>
 
@@ -93,18 +66,11 @@
         @foreach (var entry in _readyResult.Results.OrderBy(GetStatusSortOrder))
         {
             <MudItem xs="6" sm="3">
-                <MudCard Class="stats-card" Elevation="2">
-                    <MudCardContent Class="pa-4">
-                        <MudStack Spacing="2">
-                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                                <MudIcon Icon="@GetServiceIcon(entry.Name)" Color="@GetStatusColor(entry.Status)" Size="Size.Large" />
-                                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(entry.Status)" Variant="Variant.Text">@entry.Status</MudChip>
-                            </MudStack>
-                            <MudText Typo="Typo.h4" Class="fw-700">@entry.DurationMs.ToString("F1")ms</MudText>
-                            <MudText Typo="Typo.body2" Class="text-muted">@FormatServiceName(entry.Name)</MudText>
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
+                <FshStatCard Icon="@GetServiceIcon(entry.Name)"
+                             IconColor="@GetStatusColor(entry.Status)"
+                             Value="@($"{entry.DurationMs:F1}ms")"
+                             Label="@FormatServiceName(entry.Name)"
+                             Badge="@entry.Status" />
             </MudItem>
         }
     }
@@ -113,11 +79,11 @@
         @for (int i = 0; i < 6; i++)
         {
             <MudItem xs="6" sm="3">
-                <MudCard Class="stats-card" Elevation="2">
-                    <MudCardContent Class="pa-4">
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="80px" />
-                    </MudCardContent>
-                </MudCard>
+                <MudPaper Class="fsh-stat-card" Elevation="0">
+                    <div class="pa-5">
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" />
+                    </div>
+                </MudPaper>
             </MudItem>
         }
     }
@@ -193,17 +159,6 @@
     </MudPaper>
 }
 
-<style>
-    .stats-card {
-        border-radius: 12px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .stats-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    }
-</style>
 
 @code {
     private HealthResult? _liveResult;

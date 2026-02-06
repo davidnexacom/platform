@@ -3,7 +3,7 @@ using FSH.Modules.Identity.Contracts.v1.Users.ResetPassword;
 
 namespace FSH.Modules.Identity.Features.v1.Users.ResetPassword;
 
-public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
+public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
 {
     public ResetPasswordCommandValidator()
     {

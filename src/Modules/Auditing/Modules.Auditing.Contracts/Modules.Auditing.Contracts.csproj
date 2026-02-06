@@ -10,6 +10,6 @@
 		<PackageReference Include="Mediator.Abstractions" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />
+	  <ProjectReference Include="..\..\..\BuildingBlocks\Shared\Shared.csproj" />
 	</ItemGroup>
 </Project>

@@ -1,15 +1,27 @@
+using System.Diagnostics.CodeAnalysis;
 using Finbuckle.MultiTenant.Abstractions;
 
 namespace FSH.Framework.Shared.Multitenancy;
 
-public record AppTenantInfo(string Id, string Identifier, string? Name = null)
-    : TenantInfo(Id, Identifier, Name), IAppTenantInfo
+public class AppTenantInfo : TenantInfo, IAppTenantInfo
 {
     // Parameterless constructor for tooling/EF.
-    public AppTenantInfo() : this(string.Empty, string.Empty)
+    [SetsRequiredMembers]
+    public AppTenantInfo()
     {
+        Id = string.Empty;
+        Identifier = string.Empty;
     }
 
+    [SetsRequiredMembers]
+    public AppTenantInfo(string id, string identifier, string? name = null)
+    {
+        Id = id;
+        Identifier = identifier;
+        Name = name;
+    }
+
+    [SetsRequiredMembers]
     public AppTenantInfo(string id, string name, string? connectionString, string adminEmail, string? issuer = null)
         : this(id, id, name)
     {

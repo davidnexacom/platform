@@ -1,7 +1,5 @@
 using Finbuckle.MultiTenant.EntityFrameworkCore.Extensions;
-using FSH.Modules.Identity.Features.v1.RoleClaims;
-using FSH.Modules.Identity.Features.v1.Roles;
-using FSH.Modules.Identity.Features.v1.Users;
+using FSH.Modules.Identity.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

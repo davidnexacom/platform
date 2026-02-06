@@ -1,5 +1,4 @@
-using FSH.Modules.Identity.Features.v1.Sessions;
-using FSH.Modules.Identity.Features.v1.Users;
+using FSH.Modules.Identity.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
