@@ -1,0 +1,205 @@
+@page "/external/invoices"
+@using FSH.Playground.Blazor.Services.Api
+@inject IExternalGatewayClient GatewayClient
+@inject ISnackbar Snackbar
+
+<FshPageHeader Title="External Gateway - Invoices"
+               Description="Retrieve invoices from external clients through the gateway">
+    <ActionContent>
+        <MudIconButton Icon="@Icons.Material.Outlined.Refresh"
+                       Color="Color.Primary"
+                       OnClick="RefreshInvoice"
+                       Disabled="_loading"
+                       Title="Refresh" />
+    </ActionContent>
+</FshPageHeader>
+
+@* Query Form *@
+<MudPaper Class="fsh-card pa-4 mb-4">
+    <MudText Typo="Typo.h6" Class="fw-600 mb-3">Invoice Query</MudText>
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudTextField @bind-Value="_clientId"
+                          Label="Client ID"
+                          Variant="Variant.Outlined"
+                          Placeholder="e.g., default, client1"
+                          Required="true"
+                          Disabled="_loading" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudTextField @bind-Value="_invoiceId"
+                          Label="Invoice ID"
+                          Variant="Variant.Outlined"
+                          Placeholder="e.g., INV-001"
+                          Required="true"
+                          Disabled="_loading" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudSwitch @bind-Value="_includeDetails"
+                       Label="Include Details"
+                       Color="Color.Primary"
+                       Disabled="_loading" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="LoadInvoice"
+                       Disabled="_loading || string.IsNullOrWhiteSpace(_clientId) || string.IsNullOrWhiteSpace(_invoiceId)"
+                       StartIcon="@Icons.Material.Outlined.Search">
+                @if (_loading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <span class="ml-2">Loading...</span>
+                }
+                else
+                {
+                    <span>Get Invoice</span>
+                }
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Response Card *@
+@if (_response != null)
+{
+    <MudPaper Class="fsh-card pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Info" Color="Color.Info" />
+            <MudText Typo="Typo.h6" Class="fw-600">Gateway Response</MudText>
+            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="ml-auto">
+                Accepted
+            </MudChip>
+        </MudStack>
+        <MudDivider Class="mb-3" />
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.body2" Class="text-muted">Message:</MudText>
+                <MudText Typo="Typo.body1" Class="fw-600 mb-2">@_response.Message</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.body2" Class="text-muted">Correlation ID:</MudText>
+                <MudText Typo="Typo.body1" Class="fw-600 mb-2">@_response.CorrelationId</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.body2" Class="text-muted">Client ID:</MudText>
+                <MudText Typo="Typo.body1" Class="fw-600 mb-2">@_response.ClientId</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.body2" Class="text-muted">Invoice ID:</MudText>
+                <MudText Typo="Typo.body1" Class="fw-600 mb-2">@_response.InvoiceId</MudText>
+            </MudItem>
+        </MudGrid>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-3">
+            The request has been sent to the external gateway. The response will be processed asynchronously.
+            Use the Correlation ID to track the request status.
+        </MudAlert>
+    </MudPaper>
+}
+
+@* Test Data Examples *@
+<MudPaper Class="fsh-card pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+        <MudIcon Icon="@Icons.Material.Outlined.Science" Color="Color.Primary" />
+        <MudText Typo="Typo.h6" Class="fw-600">Test Examples</MudText>
+    </MudStack>
+    <MudText Typo="Typo.body2" Class="text-muted mb-3">
+        Use these sample values to test the gateway integration:
+    </MudText>
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="0" Class="pa-3 border-solid border">
+                <MudText Typo="Typo.body2" Class="fw-600 mb-2">Test Client 1</MudText>
+                <MudText Typo="Typo.caption" Class="text-muted">Client ID: <strong>default</strong></MudText>
+                <MudText Typo="Typo.caption" Class="text-muted">Invoice ID: <strong>INV-001</strong></MudText>
+                <MudButton Size="Size.Small" 
+                           Variant="Variant.Text" 
+                           Color="Color.Primary" 
+                           Class="mt-2"
+                           OnClick="@(() => LoadExample("default", "INV-001"))">
+                    Load Example
+                </MudButton>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="0" Class="pa-3 border-solid border">
+                <MudText Typo="Typo.body2" Class="fw-600 mb-2">Test Client 2</MudText>
+                <MudText Typo="Typo.caption" Class="text-muted">Client ID: <strong>client1</strong></MudText>
+                <MudText Typo="Typo.caption" Class="text-muted">Invoice ID: <strong>INV-2024-001</strong></MudText>
+                <MudButton Size="Size.Small" 
+                           Variant="Variant.Text" 
+                           Color="Color.Primary" 
+                           Class="mt-2"
+                           OnClick="@(() => LoadExample("client1", "INV-2024-001"))">
+                    Load Example
+                </MudButton>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="0" Class="pa-3 border-solid border">
+                <MudText Typo="Typo.body2" Class="fw-600 mb-2">Local Test</MudText>
+                <MudText Typo="Typo.caption" Class="text-muted">Client ID: <strong>local-test</strong></MudText>
+                <MudText Typo="Typo.caption" Class="text-muted">Invoice ID: <strong>TEST-001</strong></MudText>
+                <MudButton Size="Size.Small" 
+                           Variant="Variant.Text" 
+                           Color="Color.Primary" 
+                           Class="mt-2"
+                           OnClick="@(() => LoadExample("local-test", "TEST-001"))">
+                    Load Example
+                </MudButton>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@code {
+    private string _clientId = "default";
+    private string _invoiceId = "INV-001";
+    private bool _includeDetails = true;
+    private bool _loading = false;
+    private InvoiceResponse? _response;
+
+    private async Task LoadInvoice()
+    {
+        if (string.IsNullOrWhiteSpace(_clientId) || string.IsNullOrWhiteSpace(_invoiceId))
+        {
+            Snackbar.Add("Please enter both Client ID and Invoice ID", Severity.Warning);
+            return;
+        }
+
+        _loading = true;
+        _response = null;
+        StateHasChanged();
+
+        try
+        {
+            _response = await GatewayClient.GetInvoiceAsync(_clientId, _invoiceId, _includeDetails);
+
+            if (_response != null)
+            {
+                Snackbar.Add("Invoice request sent successfully", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to send invoice request", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Task RefreshInvoice() => LoadInvoice();
+
+    private void LoadExample(string clientId, string invoiceId)
+    {
+        _clientId = clientId;
+        _invoiceId = invoiceId;
+        StateHasChanged();
+    }
+}

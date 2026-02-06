@@ -107,6 +107,14 @@ public static class PlaygroundNavigationConfiguration
 
         // System Section
         registry.AddNavigationItem(item => item
+            .WithId("external-invoices")
+            .WithTitle("External Invoices")
+            .WithHref("/external/invoices")
+            .WithIcon(Icons.Material.Outlined.Receipt)
+            .InSection(NavigationSections.System)
+            .WithOrder(5));
+
+        registry.AddNavigationItem(item => item
             .WithId("health")
             .WithTitle("Health")
             .WithHref("/health")

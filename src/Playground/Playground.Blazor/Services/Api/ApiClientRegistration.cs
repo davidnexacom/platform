@@ -89,6 +89,14 @@ internal static class ApiClientRegistration
             return new HealthClient(client);
         });
 
+        services.AddTransient<IExternalGatewayClient>(sp =>
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient("ApiClient");
+            var logger = sp.GetRequiredService<ILogger<ExternalGatewayClient>>();
+            return new ExternalGatewayClient(client, logger);
+        });
+
         return services;
     }
 }

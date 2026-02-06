@@ -7,7 +7,15 @@ var postgres = builder
     .WithContainerName("postgres-fsh-playground")
     .WithDataVolume("fsh-postgres-data")
     .AddDatabase("fsh")
-    ;
+   ;
+
+// SQL Server container for testing External Gateway
+var sqlserver = builder
+    .AddSqlServer("sqlserver")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithContainerName("sqlserver-fsh-playground")
+    .WithDataVolume("fsh-sqlserver-data")
+    .AddDatabase("ClientDB");
 
 var redis = builder
     .AddRedis("redis")
@@ -15,7 +23,7 @@ var redis = builder
     .WithContainerName("redis-fsh-playground")
     .WithDataVolume("fsh-redis-data");
 
-// RabbitMQ container with management plugin and custom credentials
+// RabbitMQ container with credentials from parameters (set in appsettings.Development.json)
 var rabbitmqUsername = builder.AddParameter("rabbitmq-username", secret: false);
 var rabbitmqPassword = builder.AddParameter("rabbitmq-password", secret: true);
 
@@ -41,5 +49,17 @@ builder.AddProject<Projects.Playground_Api>("playground-api")
     .WaitFor(rabbitmq);
 
 builder.AddProject<Projects.Playground_Blazor>("playground-blazor");
+
+// External Gateway - Cliente de prueba local
+builder.AddProject<Projects.FSH_ExternalGateway_Host>("external-gateway")
+    .WithReference(sqlserver)
+    .WithReference(rabbitmq)
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+    .WithEnvironment("GatewayOptions__ClientId", "local-test")
+    .WithEnvironment("GatewayOptions__SchemaVersion", "v1")
+    .WithEnvironment("GatewayOptions__DefaultTimeoutSeconds", "30")
+    .WithEnvironment("GatewayOptions__EnableQueryLogging", "true")
+    .WaitFor(sqlserver)
+    .WaitFor(rabbitmq);
 
 await builder.Build().RunAsync();

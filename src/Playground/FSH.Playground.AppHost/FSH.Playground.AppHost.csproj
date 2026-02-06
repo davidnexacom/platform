@@ -12,11 +12,13 @@
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" />
     <PackageReference Include="Aspire.Hosting.Redis" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Playground.Api\Playground.Api.csproj" />
     <ProjectReference Include="..\Playground.Blazor\Playground.Blazor.csproj" />
+    <ProjectReference Include="..\..\ExternalGateway\FSH.ExternalGateway.Host\FSH.ExternalGateway.Host.csproj" />
   </ItemGroup>
 
 </Project>

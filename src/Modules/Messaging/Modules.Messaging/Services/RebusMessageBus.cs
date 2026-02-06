@@ -5,9 +5,8 @@ using Rebus.Bus;
 namespace FSH.Modules.Messaging.Services;
 
 /// <summary>
-/// Implementation of IMessageBus using Rebus.
-/// Note: Request/Response pattern in Rebus requires manual correlation handling.
-/// Use Publish/Subscribe for most scenarios.
+/// Implementation of IMessageBus using Rebus with client-based routing.
+/// Messages are routed to specific gateway queues based on ClientId property.
 /// </summary>
 internal sealed class RebusMessageBus : IMessageBus
 {
@@ -27,9 +26,23 @@ internal sealed class RebusMessageBus : IMessageBus
 
         try
         {
-            _logger.LogDebug("Sending message of type {MessageType}", typeof(TMessage).Name);
-            await _bus.Send(message);
-            _logger.LogInformation("Successfully sent message of type {MessageType}", typeof(TMessage).Name);
+            // Try to extract ClientId from message for routing
+            var clientId = GetClientIdFromMessage(message);
+            var destinationQueue = GetDestinationQueue(clientId);
+
+            _logger.LogDebug(
+                "Sending message of type {MessageType} to queue {Queue} for client {ClientId}",
+                typeof(TMessage).Name,
+                destinationQueue,
+                clientId ?? "unknown");
+
+            // Send to specific queue
+            await _bus.Advanced.Routing.Send(destinationQueue, message);
+
+            _logger.LogInformation(
+                "Successfully sent message of type {MessageType} to client {ClientId}",
+                typeof(TMessage).Name,
+                clientId ?? "unknown");
         }
         catch (Exception ex)
         {
@@ -45,9 +58,32 @@ internal sealed class RebusMessageBus : IMessageBus
 
         try
         {
-            _logger.LogDebug("Publishing message of type {MessageType}", typeof(TMessage).Name);
-            await _bus.Publish(message);
-            _logger.LogInformation("Successfully published message of type {MessageType}", typeof(TMessage).Name);
+            var clientId = GetClientIdFromMessage(message);
+
+            _logger.LogDebug(
+                "Publishing message of type {MessageType} for client {ClientId}",
+                typeof(TMessage).Name,
+                clientId ?? "all");
+
+            // If message has ClientId, send to specific queue; otherwise publish to all subscribers
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                var destinationQueue = GetDestinationQueue(clientId);
+                await _bus.Advanced.Routing.Send(destinationQueue, message);
+
+                _logger.LogInformation(
+                    "Successfully sent message of type {MessageType} to specific gateway queue {Queue}",
+                    typeof(TMessage).Name,
+                    destinationQueue);
+            }
+            else
+            {
+                await _bus.Publish(message);
+
+                _logger.LogInformation(
+                    "Successfully published message of type {MessageType} to all subscribers",
+                    typeof(TMessage).Name);
+            }
         }
         catch (Exception ex)
         {
@@ -112,5 +148,22 @@ internal sealed class RebusMessageBus : IMessageBus
         // In Rebus, handlers are registered through DI and implement IHandleMessages<T>
         // They use IBus.Reply() to send responses
         return Task.CompletedTask;
+    }
+
+    private static string? GetClientIdFromMessage(object message)
+    {
+        // Try to get ClientId property from message using reflection
+        var clientIdProperty = message.GetType().GetProperty("ClientId");
+        return clientIdProperty?.GetValue(message)?.ToString();
+    }
+
+    private static string GetDestinationQueue(string? clientId)
+    {
+        if (string.IsNullOrEmpty(clientId))
+        {
+            return "fsh.gateway.default.queue";
+        }
+
+        return $"fsh.gateway.{clientId}.queue";
     }
 }

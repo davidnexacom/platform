@@ -8,6 +8,7 @@ using FSH.Modules.Messaging;
 using FSH.Modules.Multitenancy;
 using FSH.Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using FSH.Modules.Multitenancy.Features.v1.GetTenantStatus;
+using FSH.Playground.Api.Endpoints.v1.ExternalGateway;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -90,4 +91,9 @@ app.UseHeroPlatform(p =>
 app.MapGet("/", () => Results.Ok(new { message = "hello world!" }))
    .WithTags("PlayGround")
    .AllowAnonymous();
+
+// Map External Gateway endpoints
+app.MapExternalGatewayInvoiceEndpoints();
+app.MapDynamicSqlQueryEndpoints();
+
 await app.RunAsync();

@@ -49,16 +49,23 @@ public sealed class MessagingModule : IModule
             if (loggerFactory != null)
             {
                 var logger = loggerFactory.CreateLogger<MessagingModule>();
-                logger.LogInformation("Messaging module is disabled");
+                logger.LogInformation("Messaging module is disabled. Using No-Op message bus.");
             }
             serviceProvider?.Dispose();
+
+            // Register No-Op implementation when messaging is disabled
+            services.AddScoped<IMessageBus, NoOpMessageBus>();
             return;
         }
 
-        // Configure Rebus manually without ServiceProvider extension
+        // Configure Rebus with TypeBased routing for gateway queues
         services.AddSingleton(provider =>
         {
             var activator = new DependencyInjectionHandlerActivator(provider);
+            var logger = provider.GetRequiredService<ILogger<MessagingModule>>();
+            
+            logger.LogInformation("Configuring Rebus with RabbitMQ: {ConnectionString}", 
+                rabbitMqOptions.ConnectionString);
             
             var bus = Configure.With(activator)
                 .Logging(l => l.Console())
@@ -71,6 +78,7 @@ public sealed class MessagingModule : IModule
                 })
                 .Start();
             
+            logger.LogInformation("Rebus bus started successfully with TypeBased routing");
             return bus;
         });
 
